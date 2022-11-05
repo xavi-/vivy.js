@@ -4,21 +4,124 @@
     <meta charset="UTF-8">
 </head>
 <body>
-    <h1 .intro></h1>
-    <section .section>
-        <h2 .title></h2>
-        random
-        <div>
-            <p .paragraph></p>
-        </div>
-    </section>
-    <div .deep.example.a.b.c.d><span .e></span></div>
-    <p .section.paragraph></p>
+    <div .basic id="basic-test"></div>
+
+    <div id="basic-nested-test">
+        <section .section>
+            <h2 .title></h2>
+            <div id="independent">not affected</div>
+            <div>
+                <p .paragraph></p>
+            </div>
+        </section>
+        <div .deep.example1 id="deep1"></div>
+        <div .deep.example2><span .deeper id="deep2"></span></div>
+    </div>
+
+    <div id="duplicates">
+        <div .a><div .b><div .c id="ref1"></div></div></div>
+        <div .a.b.c id="ref2"></div>
+    </div>
+
+    <div id="playground">
+        <h1 .intro></h1>
+        <section .section>
+            <h2 .title></h2>
+            random
+            <div>
+                <p .paragraph></p>
+            </div>
+        </section>
+        <div .deep.example.a.b.c.d><span .e></span></div>
+        <p .section.paragraph></p>
+    </div>
 <script type="module" src="./bop.js"></script>
 <script type="module">
 import {bop} from "./bop.js"
 
-const obj = {
+async function runTest(selector, data, asserts) {
+    const elem = document.querySelector(selector);
+    const proxy = bop(elem, data);
+
+    for(const assert of asserts) {
+        if(typeof assert === "function") {
+            await assert(proxy, elem);
+        } else {
+            const selected = (assert.selector == ".." ? elem : elem.querySelector(assert.selector));
+            if(selected == null) throw new Error(`Assert selector not found -- ${assert.selector}`)
+
+            const result = selected.textContent;
+            if(result !== assert.expected) {
+                throw new Error(`Fixed test "${selector}" -- ${assert.expected} != ${result}`);
+            }
+        }
+    }
+}
+
+runTest(
+    "#basic-test",
+    { basic: "hi" },
+    [
+        { selector: "..", expected: "hi" },
+        (proxy) => proxy.basic = "hello",
+        { selector: "..", expected: "hello" },
+        (proxy) => proxy({}),
+        { selector: "..", expected: "" },
+    ]
+);
+runTest(
+    "#basic-nested-test",
+    {
+        section: {
+            title: "title",
+            paragraph: "I'm a deep paragraph",
+        },
+        deep: {
+            example1: "deep",
+            example2: { deeper: "deeper still" },
+        },
+    },
+    [
+        { selector: "#independent", expected: "not affected" },
+        { selector: "h2", expected: "title" },
+        { selector: "p", expected: "I'm a deep paragraph" },
+        { selector: "#deep1", expected: "deep" },
+        { selector: "#deep2", expected: "deeper still" },
+
+        (proxy) => proxy.section.title = "title update",
+        { selector: "h2", expected: "title update" },
+
+        (proxy) => proxy.section = null,
+        { selector: "#independent", expected: "not affected" },
+        { selector: "h2", expected: "" },
+        { selector: "p", expected: "" },
+
+        (proxy) => proxy.deep.example1 = "example1 update",
+        { selector: "#deep1", expected: "example1 update" },
+
+        (proxy) => proxy.deep.example2.deeper = "example2 update",
+        { selector: "#deep2", expected: "example2 update" },
+    ]
+);
+
+runTest(
+    "#duplicates",
+    { a: { b: { c: "abc" } } },
+    [
+        { selector: "#ref1", expected: "abc" },
+        { selector: "#ref2", expected: "abc" },
+
+        (proxy) => proxy.a.b.c = "123",
+        { selector: "#ref1", expected: "123" },
+        { selector: "#ref2", expected: "123" },
+
+        (proxy) => proxy.a(null),
+        { selector: "#ref1", expected: "" },
+        { selector: "#ref2", expected: "" },
+    ]
+);
+
+const playground = {
     intro: "hello, I'm the intro",
     section: {
         title: "title",
@@ -26,9 +129,8 @@ const obj = {
     },
     deep: { example: { a: { b: { c: { d: { e: "😵‍💫" } } } } } },
 };
-const root = document.querySelector("body");
-
-window.proxy = bop(root, obj);
+const root = document.querySelector("#playground");
+window.proxy = bop(root, playground);
 </script>
 </body>
 </html>
