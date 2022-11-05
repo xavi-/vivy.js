@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div>
+    <ruby>
+        hi <rt>hello</rt>
+        <rp>???</rp>
+    </ruby>
+
+    <div . .poop .doopy? .ok[] .map[0] .dap[-1] .mip[1:2] !nup .!nup .a&.b bop=".hi" id="hi">hi</div>
+
+    <h1 .intro></h1>
+    <button .buttonFn>This is a button</button>
+    <button .buttonComplex @click=".click" @mouseover=".over">
+        <span .prefix/> word <span .suffix/>
+    </button>
+
+    <div class!=".isBlue ? blue : green, .classNames">
+        something
+    </div>
+
+    <div style!=".fashionStyles; border-radius: .radius">
+        style fashions
+    </div>
+
+
+    <h2 .title />
+    <input .text type="type" /> edit me
+
+    <div .checks>
+        <label><input name="jack" type="check"> Jack</label>
+        <label><input .alt_john name="john" type="check"> John</label>
+        <label><input .!mike name="not_mike" type="check"> Not Mike</label>
+    </div>
+
+    <p>Checked names: <pre .checkedNames></pre></p>
+
+    <div .radio>
+        <label><input .result type="radio" value="rab"> rab</label>
+        <label><input name="result" type="radio" value="fab"> fab</label>
+        <label><input .err_result name="result" type="radio" value="bab"> should thrown error</label>
+        <span .result />
+    </div>
+
+    <div .alt_radio>
+        <label><input .alt_result name="result" type="radio" value="rab"> rab</label>
+        <label><input .alt_result name="result" type="radio" value="fab"> fab</label>
+        <label><input .err_result name="result" type="radio" value="bab"> should thrown error</label>
+        <span .alt_result />
+    </div>
+
+    <div .opt_radio>
+        <label .options><input ..value name="result" value!=".value"> <t:inline .text></label>
+    </div>
+
+    <div .normal_selection>
+        <select value!=".value">
+            <option .options[] />
+        </select>
+    </div>
+
+    <div .group_selection>
+        <select value!=".value">
+            <optgroup .groups[] label!=".label">
+                <option .options[] />
+            </optgroup>
+        </select>
+    </div>
+
+    <ol>
+        <li .groceryList[] id!=".id"><span .text></span></li>
+    </ol>
+
+    <ol>
+        <li .textList[] id!=".id"><t:inline .text /></li>
+    </ol>
+
+    <div .editor>
+        <textarea .input></textarea>
+        <div .output />
+    </div>
+</div>
+
+    <div .show_birds?>
+        <ul .birds.length?>
+            <li .birds[] />
+        </ul>
+        <div .!birds.length?>
+            List is empty
+        </div>
+    </div>
+    <div .!show_birds?>
+        Don't show birds
+    </div>
+
+    <ul>
+        <li :template="tree" .tree>
+            <span .name @dblclick="$.tree.addChild" />
+            <ul .children.length?>
+                <t:tree .children[] />
+                <li @click="$.tree.addChild">+</li>
+            </ul>
+        </li>
+    </ul>
+
+    <table .table>
+        <tr .rows[]>
+            <td .[]>
+                <input .isEditing? type="text" value!=".text" />
+                <span .$.table.evaluate />
+            </td>
+        </tr>
+    </table>
+<script>
+const obj = {
+    intro: "hello, I'm the intro",
+    buttonFn: (e, ob) => alert(`I'm a button click: ${JSON.stringify(ob, null, "\n")}`),
+    buttonComplex: {
+        click: (e, ob) => alert(`I'm a complex click: ${JSON.stringify(ob, null, "\n")}`),
+        over: (e, ob) => console.log(`complex mouse move: ${JSON.stringify(ob, null, "\n")}`),
+        prefix: "pppprrreeeefiiiixxx",
+        suffix: "suppics"
+    },
+    isBlue: false,
+    classNames: [ "classA", "classB", "classC" ],
+    fashionStyles: {
+        border: "1px solid purple",
+        fontSize: "10px",
+    },
+    radius: "8px",
+
+    title: "I'm a title for dynamic inputs",
+    text: "I'm input text",
+    checks: {
+        jake: true,
+        alt_john: true,
+        mike: false,
+    },
+    checkedNames(obj) {
+        // this === obj
+        const rtn = [];
+
+        if (this.checks.jake) rtn.push("jake");
+        if (this.checks.alt_john) rtn.push("john");
+        if (this.checks.mike) rtn.push("mike");
+
+        return rtn.join(", ");
+    },
+    radio: {
+        result: "rab|fab|bab",
+    },
+    alt_radio: {
+        alt_result: "rab|fab|bab",
+    },
+    opt_radio: {
+        value: "an option",
+        options: [ "opt1", "opt2", "opt3" ],
+    },
+
+    normal_selection: {
+        value: "opt1",
+        options: [ "opt1", "opt2", "opt3" ]
+    },
+    group_selection: {
+        value: "opt1",
+        groups: [
+            { label: "label1", options: [ "opt1", "opt2", "opt3" ] },
+            { label: "label2", options: [ "opt4", "opt5", "opt6" ] },
+            { label: "label3", options: [ "opt7", "opt8", "opt9" ] },
+        ]
+    },
+
+    groceryList: [
+        { id: "id1", text: "apple" },
+        { id: "id2", text: "banana" },
+        { id: "id3", text: "carrot" }
+    ],
+    textList: [
+        { id: "id1", text: "apple" },
+        { id: "id2", text: "banana" },
+        { id: "id3", text: "carrot" }
+    ],
+
+    editor: {
+        input: "_markdown_",
+        output: renderMarkdown()
+    },
+
+    show_birds: true,
+    birds: [ "dove", "owl", "crow" ],
+
+    tree: {
+        name: "root",
+        children: [],
+        addChild: (node) => node.children.push({
+            name: `child${node.children.length + 1}`, children: []
+        })
+    },
+
+    table: {
+        rows: [
+            [ { isEditing: false, text: "00" }, { isEditing: false, text: "01" } ],
+            [ { isEditing: false, text: "10" }, { isEditing: false, text: "11" } ],
+            [ { isEditing: false, text: "20" }, { isEditing: false, text: "21" } ],
+        ],
+        evaluate: (cell) => `${cell}!`
+    },
+};
+</script>
+</body>
+</html>
