@@ -57,61 +57,47 @@ function createProxyTree(data) {
             }
 
             const node = getNode(tree, path);
-            if(node.proxy) {
-                node.proxy.revoke();
-                node.proxy = createProxy(path, value);
-            }
             updateDom(node, value);
 
-            return node.proxy.proxy;
+            return node.proxy;
         }
 
         const target = Object.assign(updateValue, initValue ?? {});
-        const proxy = Proxy.revocable(target, {
+        const proxy = new Proxy(target, {
             get(_, prop) {
-                if(initValue == null)
+                const value = getValue(data, path);
+                if(value == null)
                     throw new Error(`Cannot read properties of ${value} (reading '${prop}')`);
 
-                const fullPath = [ ...path, prop ];
-
-                return getNode(tree, fullPath)?.proxy.proxy ?? getValue(data, fullPath);
+                return getNode(tree, [ ...path, prop ])?.proxy ?? value[prop];
             },
-            set(_, prop, value, receiver) {
-                if(initValue == null) return false;
-
+            set(_, prop, value) {
                 const parent = getValue(data, path);
+                if(parent == null)
+                    throw new Error(`Cannot set properties of ${value} (reading '${prop}')`);
+
                 parent[prop] = value;
 
-                const fullPath = [ ...path, prop ];
-                const node = getNode(tree, fullPath);
-                if(!node) return true;
-
-                if(node.proxy) {
-                    node.proxy.revoke();
-                    node.proxy = createProxy(fullPath, value);
-                }
-                updateDom(node, value);
+                const node = getNode(tree, [ ...path, prop ]);
+                if(node) updateDom(node, value);
 
                 return true;
             },
             deleteProperty(_, prop) {
+                const value = getValue(data, path);
                 if(value == null) return false;
 
-                const value = getValue(data, path);
                 const rtn = delete value[prop];
 
                 if(!rtn) return false;
 
-                const fullPath = [ ...path, prop ];
-                const node = getNode(tree, fullPath);
-                if(!node) return rtn;
+                const node = getNode(tree, [ ...path, prop ]);
+                if(node) updateDom(node, null);
 
-                if(node.proxy) {
-                    node.proxy.revoke();
-                    node.proxy = createProxy(fullPath, null);
-                }
-                updateDom(node, null);
+                return rtn;
             },
+            ownKeys() { return Reflect.ownKeys(getValue(data, path)); },
+            has(_, key) { return Reflect.has(getValue(data, path), key); },
         });
 
         return proxy;
@@ -122,7 +108,7 @@ function createProxyTree(data) {
     window.tree = tree;
 
     return {
-        get proxy() { return tree.proxy.proxy },
+        get proxy() { return tree.proxy },
         bondElementWithPath(elem, path) {
             let node = tree, prefix = [], value = data;
             for(const part of path) {
