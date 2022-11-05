@@ -4,6 +4,7 @@
     <h1 .intro></h1>
     <section .section>
         <h2 .title></h2>
+        random
         <div>
             <p .paragraph></p>
         </div>
@@ -21,9 +22,15 @@ const obj = {
 };
 const root = document.querySelector("body");
 
-function applyValueToDom(elem, data) {
+function applyValueToDom(elem, children, data) {
     const isPrimitive = data != null && typeof data !== "object";
     if(isPrimitive) { elem.textContent = `${data}`; }
+    else if(data == null) {
+        if(Object.keys(children).length > 0)
+            console.warn("Can't populate elements because null found", elem)
+
+        if(elem.children.length <= 0) elem.textContent = "";
+    }
 }
 
 function updateDom(tree, data) {
@@ -32,7 +39,7 @@ function updateDom(tree, data) {
     while((node = nodes.pop())) {
         const [ { elements, children }, data ] = node;
 
-        for(const elem of elements) applyValueToDom(elem, data);
+        for(const elem of elements) applyValueToDom(elem, children, data);
 
         for(const [ prop, child ] of Object.entries(children)) {
             nodes.push([ child, data?.[prop] ]);
