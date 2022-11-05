@@ -2,7 +2,7 @@ function applyValueToDom(elem, children, data) {
     const isPrimitive = data != null && typeof data !== "object";
     if(isPrimitive) { elem.textContent = `${data}`; }
     else if(data == null) {
-        if(Object.keys(children).length > 0)
+        if(children.size > 0)
             console.warn("Can't populate elements because null found", elem)
 
         if(elem.children.length <= 0) elem.textContent = "";
@@ -17,7 +17,7 @@ function updateDom(tree, data) {
 
         for(const elem of elements) applyValueToDom(elem, children, data);
 
-        for(const [ prop, child ] of Object.entries(children)) {
+        for(const [ prop, child ] of children) {
             nodes.push([ child, data?.[prop] ]);
         }
     }
@@ -27,7 +27,7 @@ function getNode(tree, path) {
     let node = tree;
 
     for(const part of path) {
-        node = node.children[part]
+        node = node.children.get(part)
     }
 
     return node;
@@ -46,7 +46,7 @@ function getValue(data, path) {
 }
 
 function createProxyTree(data) {
-    const tree = { elements: [], proxy: null, children: {} };
+    const tree = { elements: [], proxy: null, children: new Map() };
 
     const createProxy = (path, initValue) => {
         const updateValue = (value) => {
@@ -126,12 +126,14 @@ function createProxyTree(data) {
         bondElementWithPath(elem, path) {
             let node = tree, prefix = [], value = data;
             for(const part of path) {
-                node.children[part] ??= { elements: [], proxy: null, children: {} };
-
                 const isObject = (value && typeof value === "object");
                 if(isObject) node.proxy ??= createProxy([ ...prefix ], value);
 
-                node = node.children[part];
+                if(!node.children.has(part)) {
+                    node.children.set(part, { elements: [], proxy: null, children: new Map() });
+                }
+
+                node = node.children.get(part);
                 value = value?.[part]
                 prefix.push(part);
             }
