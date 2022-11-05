@@ -66,10 +66,9 @@ function createProxyTree(data) {
         const proxy = new Proxy(target, {
             get(_, prop) {
                 const value = getValue(data, path);
-                if(value == null)
-                    throw new Error(`Cannot read properties of ${value} (reading '${prop}')`);
+                if(value == null) console.warn(`Read property of ${value} (reading '${prop}')`);
 
-                return getNode(tree, [ ...path, prop ])?.proxy ?? value[prop];
+                return getNode(tree, [ ...path, prop ])?.proxy ?? value?.[prop];
             },
             set(_, prop, value) {
                 const parent = getValue(data, path);
