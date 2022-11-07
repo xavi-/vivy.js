@@ -6,6 +6,8 @@
 <body>
     <div .basic id="basic-test"></div>
 
+    <div id="primitive-test"></div>
+
     <div id="basic-nested-test">
         <section .section>
             <h2 .title></h2>
@@ -63,12 +65,24 @@ runTest(
     { basic: "hi" },
     [
         { selector: "..", expected: "hi" },
+
         (proxy) => proxy.basic = "hello",
         { selector: "..", expected: "hello" },
+
         (proxy) => proxy({}),
         { selector: "..", expected: "" },
     ]
 );
+runTest(
+    "#primitive-test",
+    "primitive",
+    [
+        { selector: "..", expected: "primitive" },
+
+        (proxy) => proxy(),
+        { selector: "..", expected: "" },
+    ]
+)
 runTest(
     "#basic-nested-test",
     {
