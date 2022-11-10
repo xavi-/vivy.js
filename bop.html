@@ -25,21 +25,48 @@
         <div .a.b.c id="ref2"></div>
     </div>
 
+    <div id="basic-array">
+        <ol>
+            <li .grocery_list[]></li>
+        </ol>
+    </div>
+
+    <div id="nested-array">
+        <li .grid[][]></li>
+    </div>
+
+    <div id="nested-object-array">
+        <ol>
+            <li .classes[].students[]></li>
+        </ol>
+    </div>
+
+    <div id="complex-array">
+        <div .first class="first">
+            <ol>
+                <li .[]><span .text></span></li>
+            <ol>
+            <div>Length: <strong .length></strong></div>
+        </div>
+        <p .second.0></p>
+        <p .second.2></p>
+    </div>
+
     <div id="playground">
-        <h1 .intro></h1>
-        <section .section>
-            <h2 .title></h2>
-            random
-            <div>
-                <p .paragraph></p>
-            </div>
-        </section>
-        <div .deep.example.a.b.c.d><span .e></span></div>
-        <p .section.paragraph></p>
+        <ol>
+            <li .grocery_list[][]><span .text></span></li>
+        </ol>
+        <p>first: <span .grocery_list.0.1.text></span></p>
+        Count: <span .grocery_list.length></span>
     </div>
 <script type="module" src="./bop.js"></script>
 <script type="module">
 import {bop} from "./bop.js"
+
+const playground = {
+    grocery_list: [ [{ text: "a" }, {text: "aa"}], [{ text: "b" }], [{ text: "c" }] ]
+};
+const root = document.querySelector("#playground");
 
 async function runTest(selector, data, asserts) {
     const elem = document.querySelector(selector);
@@ -48,14 +75,33 @@ async function runTest(selector, data, asserts) {
     for(const assert of asserts) {
         if(typeof assert === "function") {
             await assert(proxy, elem);
-        } else {
-            const selected = (assert.selector == ".." ? elem : elem.querySelector(assert.selector));
-            if(selected == null) throw new Error(`Assert selector not found -- ${assert.selector}`)
+        } else if(assert.selector) {
+            const { selector, expected } = assert;
+            const selected = (selector == ".." ? elem : elem.querySelector(selector));
+            if(selected == null) throw new Error(`Assert selector not found -- "${selector}"`);
 
             const result = selected.textContent;
-            if(result !== assert.expected) {
-                throw new Error(`Fixed test "${selector}" -- ${assert.expected} != ${result}`);
+            if(result !== expected) {
+                throw new Error(`Fixed test "${selector}" -- "${expected}" != "${result}"`);
             }
+        } else if(assert.selectAll) {
+            const { selectAll, expected } = assert;
+            const selected = elem.querySelectorAll(selectAll);
+
+            if(expected.length !== selected.length)
+                throw new Error(`Fixed test "${selectAll}" -- `
+                    + `Expected ${expected.length} but found ${selected.length} elements`);
+
+            for(const [ idx, elem ] of [ ...selected ].entries()) {
+                const result = elem.textContent;
+
+                if(result === expected[idx]) continue;
+
+                throw new Error(`Fixed test "${selectAll}" -- "${expected[idx]}" != "${result}"`);
+            }
+
+        } else {
+            throw new Error("Unknown assert type");
         }
     }
 }
@@ -82,7 +128,7 @@ runTest(
         (proxy) => proxy(),
         { selector: "..", expected: "" },
     ]
-)
+);
 runTest(
     "#basic-nested-test",
     {
@@ -117,7 +163,6 @@ runTest(
         { selector: "#deep2", expected: "example2 update" },
     ]
 );
-
 runTest(
     "#duplicates",
     { a: { b: { c: "abc" } } },
@@ -134,16 +179,74 @@ runTest(
         { selector: "#ref2", expected: "" },
     ]
 );
+runTest(
+    "#basic-array",
+    { grocery_list: [ "a", "b", "c" ] },
+    [
+        { selectAll: "li", expected: [ "a", "b", "c" ] },
 
-const playground = {
-    intro: "hello, I'm the intro",
-    section: {
-        title: "title",
-        paragraph: "I'm a deeper paragraph"
+        (proxy) => proxy.grocery_list.push("d"),
+        { selectAll: "li", expected: [ "a", "b", "c", "d" ] },
+
+        (proxy) => proxy(),
+        { selectAll: "li", expected: [] },
+    ]
+);
+runTest(
+    "#nested-array",
+    { grid: [ [ "blue", "green" ], [ "green", "blue" ] ] },
+    [
+        { selectAll: "li", expected: [ "blue", "green", "green", "blue" ] },
+
+        (proxy) => proxy.grid.push([ "red", "purple" ]),
+        { selectAll: "li", expected: [ "blue", "green", "green", "blue", "red", "purple" ] },
+
+        (proxy) => proxy.grid[0].push("red"),
+        { selectAll: "li", expected: [ "blue", "green", "red", "green", "blue", "red", "purple" ] },
+
+        (proxy) => proxy.grid[2][1] = "cyan",
+        { selectAll: "li", expected: [ "blue", "green", "red", "green", "blue", "red", "cyan" ] },
+
+        (proxy) => proxy(),
+        { selectAll: "li", expected: [] },
+    ]
+);
+runTest(
+    "#nested-object-array",
+    { classes: [ { students: [ "alex", "blair" ] }, { students: [ "cory", "quinn" ] } ] },
+    [
+        { selectAll: "li", expected: [ "alex", "blair", "cory", "quinn" ] },
+
+        (proxy) => proxy.classes[1] = { students: [ "daniel", "emerson" ] },
+        { selectAll: "li", expected: [ "alex", "blair", "daniel", "emerson" ] },
+
+        (proxy) => proxy(),
+        { selectAll: "li", expected: [] },
+    ]
+);
+runTest(
+    "#complex-array",
+    {
+        first: [ { text: "a" }, { text: "b" }, { text: "c" } ],
+        second: [ "alpha", "beta", "gamma" ]
     },
-    deep: { example: { a: { b: { c: { d: { e: "😵‍💫" } } } } } },
-};
-const root = document.querySelector("#playground");
+    [
+        { selectAll: "li", expected: [ "a", "b", "c" ] },
+        { selector: "strong", expected: "3" },
+        { selectAll: "p", expected: [ "alpha", "gamma" ] },
+
+        (proxy) => proxy({ first: [ { text: "d" } ], second: [ "one", "two", "three" ] }),
+        { selectAll: "li", expected: [ "d" ] },
+        { selector: "strong", expected: "1" },
+        { selectAll: "p", expected: [ "one", "three" ] },
+
+        (proxy) => proxy(),
+        { selectAll: "li", expected: [] },
+        { selector: "strong", expected: "" },
+        { selectAll: "p", expected: [ "", "" ] },
+    ]
+);
+
 window.proxy = bop(root, playground);
 </script>
 </body>
