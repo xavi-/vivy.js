@@ -3,7 +3,7 @@ function applyValueToDom(tree, data) {
 
     for(const elem of tree.elements) {
         const tagName = elem.element.tagName;
-        if(tagName == "INPUT" || tagName == "SELECT") {
+        if(tagName == "INPUT" || tagName == "SELECT" || tagName == "TEXTAREA") {
             const { element, syncer } = elem;
 
             if(tagName == "INPUT" && element.type == "number") {
@@ -136,7 +136,7 @@ function parsePathParts(elem) {
     }
     if(
         pathAttr == null &&
-        (elem.tagName == "INPUT" || elem.tagName == "SELECT") &&
+        (elem.tagName == "INPUT" || elem.tagName == "SELECT" || elem.tagName == "TEXTAREA") &&
         (elem.attributes["name"]?.value || elem.attributes[":assign-to"]?.value)
     ) {
         pathAttr = elem.attributes[":assign-to"]?.value || elem.attributes["name"].value;
@@ -171,7 +171,8 @@ function getValue(data, path) {
 }
 
 function createSyncerIfNecessary(root, path, elem) {
-    if(elem.tagName != "INPUT" && elem.tagName != "SELECT") return null;
+    const tagName = elem.tagName
+    if(tagName != "INPUT" && tagName != "SELECT" && tagName != "TEXTAREA") return null;
 
     let syncer;
     if (path.length === 0) syncer = root;
