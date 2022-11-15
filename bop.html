@@ -108,7 +108,7 @@ async function runTest(selector, data, asserts) {
     const elem = document.querySelector(selector);
     const proxy = bop(elem, data);
 
-    for(const assert of asserts) {
+    for(const [aIdx, assert] of asserts.entries()) {
         if(typeof assert === "function") {
             await assert(proxy, elem);
         } else if(assert.selector) {
@@ -118,14 +118,14 @@ async function runTest(selector, data, asserts) {
 
             const result = selected.textContent;
             if(result !== expected) {
-                throw new Error(`Fixed test "${selector}" -- "${expected}" != "${result}"`);
+                throw new Error(`"${selector}:${aIdx}" -- "${expected}" != "${result}"`);
             }
         } else if(assert.selectAll) {
             const { selectAll, expected } = assert;
             const selected = elem.querySelectorAll(selectAll);
 
             if(expected.length !== selected.length)
-                throw new Error(`Fixed test "${selectAll}" -- `
+                throw new Error(`"${selectAll}:${aIdx}" -- `
                     + `Expected ${expected.length} but found ${selected.length} elements`);
 
             for(const [ idx, elem ] of [ ...selected ].entries()) {
@@ -133,7 +133,7 @@ async function runTest(selector, data, asserts) {
 
                 if(result === expected[idx]) continue;
 
-                throw new Error(`Fixed test "${selectAll}" -- "${expected[idx]}" != "${result}"`);
+                throw new Error(`"${selectAll}:${aIdx}" -- "${expected[idx]}" != "${result}"`);
             }
 
         } else {
