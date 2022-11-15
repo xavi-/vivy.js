@@ -2,12 +2,39 @@ function applyValueToDom(tree, data) {
     const isPrimitive = data != null && typeof data !== "object";
 
     for(const elem of tree.elements) {
-        if(isPrimitive) { elem.textContent = `${data}`; }
+        const tagName = elem.element.tagName;
+        if(tagName == "INPUT" || tagName == "SELECT") {
+            const { element, syncer } = elem;
+
+            if(tagName == "INPUT" && element.type == "number") {
+                element.valueAsNumber = data;
+            } else if(tagName == "INPUT" && (
+                element.type.startsWith("date") ||
+                element.type == "month" || element.type == "week" || element.type == "time"
+            )) {
+                element.valueAsDate = data;
+            } else if(tagName == "INPUT" && element.type == "radio") {
+                element.checked = (`${data}` == element.value);
+            } else if(tagName == "INPUT" && element.type == "checkbox") {
+                element.checked =
+                    (data === true && element.value == "on") || `${data}` == element.value;
+            } else if(tagName == "SELECT" && element.multiple) {
+                if(data && data.length > 0) {
+                    for(const option of element.options) {
+                        option.selected = data.includes(option.value);
+                    }
+                }
+            } else {
+                element.value = `${data ?? ""}`;
+            }
+            element.addEventListener("change", syncer);
+        }
+        else if(isPrimitive) { elem.element.textContent = `${data}`; }
         else if(data == null) {
             if(tree.children.size > 0)
-                console.warn("Can't populate elements because null found", elem)
+                console.warn("Can't populate elements because null found", elem.element)
 
-            if(elem.children.length <= 0) elem.textContent = "";
+            if(elem.element.children.length <= 0) elem.element.textContent = "";
         }
     }
 }
@@ -17,7 +44,7 @@ function gatherElements(tree) {
 
     let node, nodes = [ tree ];
     while((node = nodes.pop())) {
-        if(node.elements) rtn.push(...node.elements);
+        if(node.elements) rtn.push(...node.elements.map(e => e.element));
         else nodes.push(...node.children.values());
     }
 
@@ -86,7 +113,7 @@ function updateDom(subtree, data, path, hydrate) {
             ;
             nodes.push(...toUpdate);
         } else {
-            applyValueToDom(subtree, data, path, hydrate);
+            applyValueToDom(subtree, data);
 
             for(const [ prop, child ] of subtree.children) {
                 nodes.push([ child, data?.[prop], [ ...path, prop ] ]);
@@ -96,7 +123,7 @@ function updateDom(subtree, data, path, hydrate) {
 }
 
 function parsePathParts(elem) {
-    let pathAttr = null;
+    let pathAttr = null, isAssignToAttr = false;
     for(const attr of elem.attributes) {
         if (attr.name != "bop" && attr.name.charAt(0) != ".") continue;
 
@@ -107,10 +134,18 @@ function parsePathParts(elem) {
 
         pathAttr = (attr.name == "bop" ? attr.value : attr.name);
     }
+    if(
+        pathAttr == null &&
+        (elem.tagName == "INPUT" || elem.tagName == "SELECT") &&
+        (elem.attributes["name"]?.value || elem.attributes[":assign-to"]?.value)
+    ) {
+        pathAttr = elem.attributes[":assign-to"]?.value || elem.attributes["name"].value;
+        isAssignToAttr = true;
+    }
 
     const parts = pathAttr?.split(/(?:\.|(?=\[]))/g).filter(p => p.length > 0) ?? [];
 
-    return { parts, pathAttr };
+    return { parts, pathAttr, isAssignToAttr };
 }
 
 function getNode(tree, path) {
@@ -135,6 +170,66 @@ function getValue(data, path) {
     return rtn;
 }
 
+function createSyncerIfNecessary(root, path, elem) {
+    if(elem.tagName != "INPUT" && elem.tagName != "SELECT") return null;
+
+    let syncer;
+    if (path.length === 0) syncer = root;
+    else {
+        const prop = path[path.length - 1];
+        const proxy = getNode(root, path.slice(0, -1)).proxy;
+        syncer = (val => proxy[prop] = val)
+    }
+
+    if(elem.type == "number") {
+        return event => syncer(event.target.valueAsNumber);
+    }
+
+    if(
+        elem.type.startsWith("date") ||
+        elem.type == "month" || elem.type == "week" || elem.type == "time"
+    ) {
+        return event => syncer(event.target.valueAsDate);
+    }
+
+    if(elem.type == "file") {
+        return event => syncer(event.target.files);
+    }
+
+    // checkboxes and multi-selects are special
+    if(elem.type != "checkbox" && !elem.multiple) {
+        return event => syncer(event.target.value);
+    }
+
+    if(elem.multiple) {
+        return event => {
+            const val = [];
+
+            for(const option of event.target.selectedOptions) {
+                val.push(option.value);
+            }
+
+            syncer(val);
+        }
+    }
+
+    // checkboxes
+    const node = getNode(root, path);
+    return _ => {
+        const siblings = node.elements.filter(elem => elem.element.type == "checkbox");
+        if(siblings.length === 1) {
+            const hasValue = !!elem.value;
+            syncer(elem.checked ? (hasValue ? elem.value : true) : (hasValue ? null : false));
+        } else {
+            const val = [];
+            for(const { element } of siblings) {
+                if(element) val.push(element.value || "on");
+            }
+            syncer(val);
+        }
+    }
+}
+
 function createProxyTree(elem, data) {
     const createProxy = (path, initValue) => {
         const _updateDom = (node, value) => updateDom(node, value, path, hydrate);
@@ -151,7 +246,11 @@ function createProxyTree(elem, data) {
             return node.proxy;
         }
 
-        const target = Object.assign(updateValue, initValue ?? {});
+        const target = updateValue;
+        // Can't override name or length on functions
+        for(const [ key, val ] of Object.entries(initValue ?? {})) {
+            if(key != "name" && key != "length") { target[key] = val; }
+        }
         const proxy = new Proxy(target, {
             get(_, prop) {
                 const value = getValue(data, path);
@@ -204,13 +303,14 @@ function createProxyTree(elem, data) {
     };
 
     const hydrate = (elements, data, path) => {
-        const tree = { elements, proxy: null, children: new Map() }
+        const root = { elements: [], proxy: null, children: new Map() };
+        root.elements = elements.map(element => ({ element }));
 
-        let node, nodes = elements.map(elem => [ elem, tree, data, path ])
+        let node, nodes = elements.map(elem => [ elem, root, data, path ])
         while((node = nodes.pop())) {
             const [ elem, tree, data, path ] = node;
 
-            const { parts, pathAttr } = parsePathParts(elem);
+            const { parts, pathAttr, isAssignToAttr } = parsePathParts(elem);
 
             let subtree = tree, curData = data, curPath = [ ...path ], idx = 0;
             for(const part of parts) {
@@ -233,17 +333,25 @@ function createProxyTree(elem, data) {
             }
 
             const foundArray = (idx < parts.length && parts[idx] === "[]");
-            if(!foundArray) {
-                nodes.push(...Array.from(elem.children).map(e => [ e, subtree, curData, curPath ]));
+            if(foundArray && isAssignToAttr) {
+                throw new Error("Can't have array in `name` of `:assign-to` attributes");
+            } else if(!foundArray) {
+                const children = Array.from(elem.children);
+                if(isAssignToAttr) {
+                    nodes.push(...children.map(child => [ child, tree, data, path ]));
+                } else {
+                    nodes.push(...children.map(child => [ child, subtree, curData, curPath ]));
+                }
 
                 if(pathAttr != null) {
                     const isObject = (curData && typeof curData === "object");
                     if(isObject && elem.children.length === 0) {
-                        console.warn("Object never used?", elem, path);
+                        console.warn("Object never used?", elem, curPath);
                     }
 
-                    subtree.elements.push(elem);
-                    applyValueToDom(subtree, curData);
+                    const syncer = createSyncerIfNecessary(root, curPath, elem);
+                    subtree.elements.push({ element: elem, syncer });
+                    applyValueToDom(subtree, curData, curPath);
                 }
             } else {
                 if(!Array.isArray(curData)) console.warn(`Property type mismatch:`, elem, curData);
@@ -279,7 +387,7 @@ function createProxyTree(elem, data) {
             }
         }
 
-        return tree;
+        return root;
     };
 
     const tree = hydrate([ elem ], data, []);
@@ -287,6 +395,7 @@ function createProxyTree(elem, data) {
         tree.proxy = createProxy([], data);
         tree.proxy(data);
     }
+    tree.proxy(data); // This is not efficient or ideal
 
     window.tree = tree;
 

@@ -53,20 +53,56 @@
     </div>
 
     <div id="playground">
-        <ol>
-            <li .grocery_list[][]><span .text></span></li>
-        </ol>
-        <p>first: <span .grocery_list.0.1.text></span></p>
-        Count: <span .grocery_list.length></span>
+        <input .input>
+        <input name="named">
+        <div .radio>
+            <label><input name="result" type="radio" value="fab"> fab</label>
+            <label><input name="result" type="radio" value="rab"> rab</label>
+            <label><input name="result" type="radio" value="bab"> bab</label>
+        </div>
+        <div .select>
+            <select name="value">
+                <option .options[] />
+            </select>
+        </div>
+        <div .check>
+            <label><input name="results" type="checkbox" value="woo"> woo</label>
+            <label><input name="results" type="checkbox" value="poo"> poo</label>
+            <label><input name="results" type="checkbox" value="chew"> chew</label>
+
+            <label><input name="resultA" type="checkbox"> chew</label>
+        </div>
+        <div .multiselect>
+            <select name="values" multiple>
+                <option .options[] />
+            </select>
+        </div>
+        <input name="color" type="color">
+        <input name="number" type="number">
+        <input name="date" type="date">
+        <button @click=".clicked">button</button>
     </div>
 <script type="module" src="./bop.js"></script>
 <script type="module">
-import {bop} from "./bop.js"
+import { bop } from "./bop.js"
 
 const playground = {
-    grocery_list: [ [{ text: "a" }, {text: "aa"}], [{ text: "b" }], [{ text: "c" }] ]
+    input: "okay",
+    named: "input",
+    radio: { result: "rab" },
+    select: {
+        value: "c",
+        options: [ "a", "b", "c" ]
+    },
+    check: { results: [ "poo" ], resultA: true },
+    multiselect: {
+        values: ["bacon"],
+        options: [ "egg", "bacon", "biscuit" ],
+    },
+    clicked: (e, obj) => console.log("obj", obj),
 };
 const root = document.querySelector("#playground");
+window.proxy = bop(root, playground);
 
 async function runTest(selector, data, asserts) {
     const elem = document.querySelector(selector);
