@@ -232,6 +232,8 @@ function createSyncerIfNecessary(root, path, elem) {
 }
 
 function createProxyTree(elem, data) {
+    if(!elem) throw new Error("Null element passed in");
+
     const createProxy = (path, initValue) => {
         const _updateDom = (node, value) => updateDom(node, value, path, hydrate);
         const updateValue = (value) => {
