@@ -16,8 +16,10 @@ function applyValueToDom(tree, data) {
             } else if(tagName == "INPUT" && element.type == "radio") {
                 element.checked = (`${data}` == element.value);
             } else if(tagName == "INPUT" && element.type == "checkbox") {
-                element.checked =
-                    (data === true && element.value == "on") || `${data}` == element.value;
+                element.checked = data != null && (
+                    (data === true && element.value == "on") ||
+                    `${data}` == element.value || data.includes?.(element.value)
+                );
             } else if(tagName == "SELECT" && element.multiple) {
                 if(data && data.length > 0) {
                     for(const option of element.options) {
@@ -175,7 +177,7 @@ function createSyncerIfNecessary(root, path, elem) {
     if(tagName != "INPUT" && tagName != "SELECT" && tagName != "TEXTAREA") return null;
 
     let syncer;
-    if (path.length === 0) syncer = root;
+    if (path.length === 0) syncer = (val) => root.proxy(val);
     else {
         const prop = path[path.length - 1];
         const proxy = getNode(root, path.slice(0, -1)).proxy;
@@ -224,7 +226,7 @@ function createSyncerIfNecessary(root, path, elem) {
         } else {
             const val = [];
             for(const { element } of siblings) {
-                if(element) val.push(element.value || "on");
+                if(element.checked) val.push(element.value || "on");
             }
             syncer(val);
         }
@@ -281,6 +283,9 @@ function createProxyTree(elem, data) {
                     _updateDom(node.children.get(prop), value);
                 }
 
+                // Here to update element's attributes
+                if(node.elements) applyValueToDom(node, parent);
+
                 return true;
             },
             deleteProperty(_, prop) {
@@ -310,7 +315,7 @@ function createProxyTree(elem, data) {
         root.elements = elements.map(element => ({ element }));
 
         let node, nodes = elements.map(elem => [ elem, root, data, path ])
-        while((node = nodes.pop())) {
+        while((node = nodes.shift())) {
             const [ elem, tree, data, path ] = node;
 
             const { parts, pathAttr, isAssignToAttr } = parsePathParts(elem);

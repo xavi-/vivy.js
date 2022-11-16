@@ -52,34 +52,54 @@
         <p .second.2></p>
     </div>
 
-    <div id="playground">
-        <input .input>
-        <input name="named">
-        <div .radio>
-            <label><input name="result" type="radio" value="fab"> fab</label>
-            <label><input name="result" type="radio" value="rab"> rab</label>
-            <label><input name="result" type="radio" value="bab"> bab</label>
-        </div>
-        <div .select>
-            <select name="value">
-                <option .options[] />
-            </select>
-        </div>
-        <div .check>
-            <label><input name="results" type="checkbox" value="woo"> woo</label>
-            <label><input name="results" type="checkbox" value="poo"> poo</label>
-            <label><input name="results" type="checkbox" value="chew"> chew</label>
+    <div id="input-basic">
+        <input .input id="input">
+        <input name="named" id="named">
+        <textarea :assign-to=".assigned" name="not-used" id="assigned"></textarea>
+    </div>
 
-            <label><input name="resultA" type="checkbox"> chew</label>
-        </div>
-        <div .multiselect>
-            <select name="values" multiple>
-                <option .options[] />
-            </select>
-        </div>
+    <div id="input-radio">
+        <label><input name="result" type="radio" value="fab"> fab</label>
+        <label><input name="result" type="radio" value="rab"> rab</label>
+        <label><input name="result" type="radio" value="bab"> bab</label>
+    </div>
+
+    <div id="input-checkbox">
+        <label><input name="groupA" type="checkbox" value="woo"> woo</label>
+        <label><input name="groupA" type="checkbox" value="poo"> poo</label>
+        <label><input name="groupA" type="checkbox" value="chew"> chew</label>
+
+        <label><input name="individualA" type="checkbox"> shew</label>
+        <label><input name="individualB" type="checkbox" value="doo"> moo</label>
+    </div>
+
+    <div id="input-select">
+        <select name="value">
+            <option .options[] />
+        </select>
+    </div>
+
+    <div id="input-multiselect">
+        <select :assign-to="values" multiple>
+            <option .options[] />
+        </select>
+    </div>
+
+    <div id="input-non-string">
         <input name="color" type="color">
         <input name="number" type="number">
         <input name="date" type="date">
+    </div>
+
+    <div id="input-root-value">
+        <select . multiple>
+            <option>a</option>
+            <option>b</option>
+            <option>c</option>
+        </select>
+    </div>
+
+    <div id="playground">
         <button @click=".clicked">button</button>
     </div>
 <script type="module" src="./bop.js"></script>
@@ -87,22 +107,21 @@
 import { bop } from "./bop.js"
 
 const playground = {
-    input: "okay",
-    named: "input",
-    radio: { result: "rab" },
-    select: {
-        value: "c",
-        options: [ "a", "b", "c" ]
-    },
-    check: { results: [ "poo" ], resultA: true },
-    multiselect: {
-        values: ["bacon"],
-        options: [ "egg", "bacon", "biscuit" ],
-    },
     clicked: (e, obj) => console.log("obj", obj),
 };
 const root = document.querySelector("#playground");
 window.proxy = bop(root, playground);
+
+function compareArrays(context, actual, expected) {
+    if(expected.length !== actual?.length)
+        throw new Error(`${context} -- Expected ${expected.length}, found ${actual?.length} items`);
+
+    for(const [ idx, result ] of actual.entries()) {
+        if(result === expected[idx]) continue;
+
+        throw new Error(`${context} -- "${expected[idx]}" != "${result}"`);
+    }
+}
 
 async function runTest(selector, data, asserts) {
     const elem = document.querySelector(selector);
@@ -123,25 +142,51 @@ async function runTest(selector, data, asserts) {
         } else if(assert.selectAll) {
             const { selectAll, expected } = assert;
             const selected = elem.querySelectorAll(selectAll);
+            const results = [ ...selected ].map(s => s.textContent)
 
-            if(expected.length !== selected.length)
-                throw new Error(`"${selectAll}:${aIdx}" -- `
-                    + `Expected ${expected.length} but found ${selected.length} elements`);
+            compareArrays(`"${selector}:${aIdx}"`, results, expected);
+        } else if(assert.valueFrom) {
+            const { valueFrom, expected, isChecked } = assert;
+            const selected = (valueFrom == ".." ? elem : elem.querySelector(valueFrom));
+            if(selected == null) throw new Error(`Assert valueFrom not found -- "${valueFrom}"`);
 
-            for(const [ idx, elem ] of [ ...selected ].entries()) {
-                const result = elem.textContent;
-
-                if(result === expected[idx]) continue;
-
-                throw new Error(`"${selectAll}:${aIdx}" -- "${expected[idx]}" != "${result}"`);
+            if(isChecked != null) {
+                const result = selected.checked;
+                if(result !== isChecked) {
+                    throw new Error(`"${selector}:${aIdx}" -- "${isChecked}" != "${result}"`);
+                }
+            } else if(!selected.multiple) {
+                const result = selected.valueAsDate || selected.valueAsNumber || selected.value;
+                if(
+                    result !== expected &&
+                    !(expected instanceof Date && result?.toString() == expected.toString())
+                ) {
+                    throw new Error(`"${selector}:${aIdx}" -- "${expected}" != "${result}"`);
+                }
+            } else {
+                const results = [ ...selected.selectedOptions ].map(op => op.value);
+                compareArrays(`"${selector}:${aIdx}"`, results, expected);
             }
+        } else if(assert.path) {
+            const { path, expected } = assert;
+            const parts = path.split(".").filter(p => p);
 
+            let result = proxy;
+            for(const part of parts) result = result?.[part];
+
+            if(Array.isArray(expected)) { compareArrays(`"${path}:${aIdx}"`, result, expected); }
+            else if(
+                result !== expected &&
+                !(expected instanceof Date && result?.toString() == expected.toString())
+            ) {
+                throw new Error(`"${path}:${aIdx}" -- "${expected}" != "${result}"`);
+            }
         } else {
-            throw new Error("Unknown assert type");
+            throw new Error("Unknown assert type, " + Object.keys(assert));
         }
     }
 }
-
+//*
 runTest(
     "#basic-test",
     { basic: "hi" },
@@ -282,8 +327,205 @@ runTest(
         { selectAll: "p", expected: [ "", "" ] },
     ]
 );
+runTest(
+    "#input-basic",
+    {
+        input: "hi",
+        named: "hey",
+        assigned: "hello",
+    },
+    [
+        { valueFrom: "#input", expected: "hi" },
+        { valueFrom: "#named", expected: "hey" },
+        { valueFrom: "#assigned", expected: "hello" },
 
-window.proxy = bop(root, playground);
+        (proxy) => proxy.input = "ok",
+        { valueFrom: "#input", expected: "ok" },
+
+        (proxy) => proxy.named = "ok",
+        { valueFrom: "#named", expected: "ok" },
+
+        (proxy) => proxy.assigned = "ok",
+        { valueFrom: "#assigned", expected: "ok" },
+
+        (_, elem) => {
+            const input = elem.querySelector("#input");
+            input.value = "poop";
+            input.dispatchEvent(new Event("change"))
+        },
+        { path: "input", expected: "poop" },
+
+        (_, elem) => {
+            const named = elem.querySelector("#named");
+            named.value = "poop";
+            named.dispatchEvent(new Event("change"))
+        },
+        { path: "named", expected: "poop" },
+
+        (_, elem) => {
+            const assigned = elem.querySelector("#assigned");
+            assigned.value = "poop";
+            assigned.dispatchEvent(new Event("change"))
+        },
+        { path: "assigned", expected: "poop" },
+    ]
+);
+runTest(
+    "#input-radio",
+    { result: "rab" },
+    [
+        { valueFrom: "[value=fab]", isChecked: false },
+        { valueFrom: "[value=rab]", isChecked: true },
+        { valueFrom: "[value=bab]", isChecked: false },
+
+        (proxy) => proxy.result = "fab",
+        { valueFrom: "[value=fab]", isChecked: true },
+        { valueFrom: "[value=rab]", isChecked: false },
+        { valueFrom: "[value=bab]", isChecked: false },
+
+        (_, elem) => {
+            const input = elem.querySelector("[value=bab]");
+            input.checked = true;
+            input.dispatchEvent(new Event("change"))
+        },
+        { path: "result", expected: "bab" },
+    ]
+);
+runTest(
+    "#input-checkbox",
+    { groupA: null, individualA: false, individualB: null },
+    [
+        { valueFrom: "[value=woo]", isChecked: false },
+        { valueFrom: "[value=poo]", isChecked: false },
+        { valueFrom: "[value=chew]", isChecked: false },
+        { valueFrom: "[name=individualA]", isChecked: false },
+        { valueFrom: "[name=individualB]", isChecked: false },
+
+        (proxy) => proxy.individualA = true,
+        { valueFrom: "[name=individualA]", isChecked: true },
+
+        (_, elem) => {
+            let input = elem.querySelector("[value=woo]");
+            input.checked = true;
+            input.dispatchEvent(new Event("change"));
+
+            input = elem.querySelector("[value=poo]");
+            input.checked = true;
+            input.dispatchEvent(new Event("change"))
+        },
+        { path: "groupA", expected: [ "woo", "poo" ] },
+
+        (proxy) => proxy.groupA = [],
+        { valueFrom: "[value=woo]", isChecked: false },
+        { valueFrom: "[value=poo]", isChecked: false },
+        { valueFrom: "[value=chew]", isChecked: false },
+
+        (_, elem) => {
+            let input = elem.querySelector("[value=doo]");
+            input.checked = true;
+            input.dispatchEvent(new Event("change"));
+        },
+        { path: "individualB", expected: "doo" },
+    ]
+);
+runTest(
+    "#input-select",
+    { value: null, options: [ "a", "b", "c", "d" ] },
+    [
+        (proxy) => proxy.value = "d",
+        { valueFrom: "select", expected: "d" },
+
+        (_, elem) => {
+            let input = elem.querySelector("select");
+            input.children[1].selected = true;
+            input.dispatchEvent(new Event("change"));
+        },
+        { path: "value", expected: "b" },
+
+        (proxy) => proxy.value = "a",
+        { valueFrom: "select", expected: "a" },
+    ]
+);
+runTest(
+    "#input-multiselect",
+    { values: null, options: [ "a", "b", "c", "d" ] },
+    [
+        (proxy) => proxy.values = [ "a", "d" ],
+        { valueFrom: "select", expected: [ "a", "d" ] },
+
+        (_, elem) => {
+            let input = elem.querySelector("select");
+            input.children[1].selected = true;
+            input.dispatchEvent(new Event("change"));
+        },
+        { path: "values", expected: [ "a", "b", "d" ] },
+
+        (_, elem) => {
+            let input = elem.querySelector("select");
+            input.children[0].selected = false;
+            input.dispatchEvent(new Event("change"));
+        },
+        { path: "values", expected: [ "b", "d" ] },
+
+        (proxy) => proxy.values = "a",
+        { valueFrom: "select", expected: "a" },
+    ]
+);
+runTest(
+    "#input-non-string",
+    { color: "#ffddff", number: 18, date: new Date("1995-12-17") },
+    [
+        { valueFrom: "[name=color]", expected: "#ffddff" },
+        (_, elem) => {
+            let input = elem.querySelector("[name=color]");
+            input.value = "#aaddff";
+            input.dispatchEvent(new Event("change"));
+        },
+        { path: "color", expected: "#aaddff" },
+
+        (proxy) => proxy.color = "#ddeedd",
+        { valueFrom: "[name=color]", expected: "#ddeedd" },
+
+        { valueFrom: "[name=number]", expected: 18 },
+        (_, elem) => {
+            let input = elem.querySelector("[name=number]");
+            input.valueAsNumber = 22;
+            input.dispatchEvent(new Event("change"));
+        },
+        { path: "number", expected: 22 },
+
+        (proxy) => proxy.number = 28,
+        { valueFrom: "[name=number]", expected: 28 },
+
+        { valueFrom: "[name=date]", expected: new Date("1995-12-17") },
+        (_, elem) => {
+            let input = elem.querySelector("[name=date]");
+            input.valueAsDate = new Date("1994-11-16");
+            input.dispatchEvent(new Event("change"));
+        },
+        { path: "date", expected: new Date("1994-11-16") },
+
+        (proxy) => proxy.date = new Date("1993-10-15"),
+        { valueFrom: "[name=date]", expected: new Date("1993-10-15") },
+    ]
+);
+runTest(
+    "#input-root-value",
+    [ "a" ],
+    [
+        { valueFrom: "select", expected: [ "a" ] },
+        (_, elem) => {
+            let input = elem.querySelector("select");
+            input.children[1].selected = true;
+            input.dispatchEvent(new Event("change"));
+        },
+        { path: ".", expected: [ "a", "b" ] },
+
+        (proxy) => proxy.shift(),
+        { valueFrom: "select", expected: [ "b" ] },
+    ]
+);
+//*/
 </script>
 </body>
 </html>
