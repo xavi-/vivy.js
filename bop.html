@@ -123,6 +123,13 @@ function compareArrays(context, actual, expected) {
     }
 }
 
+function compareValue(context, actual, expected) {
+    if(actual === expected) return;
+    if(expected instanceof Date && actual?.toString() == expected.toString()) return;
+
+    throw new Error(`${context} -- "${expected}" != "${actual}"`);
+}
+
 async function runTest(selector, data, asserts) {
     const elem = document.querySelector(selector);
     const proxy = bop(elem, data);
@@ -135,10 +142,7 @@ async function runTest(selector, data, asserts) {
             const selected = (selector == ".." ? elem : elem.querySelector(selector));
             if(selected == null) throw new Error(`Assert selector not found -- "${selector}"`);
 
-            const result = selected.textContent;
-            if(result !== expected) {
-                throw new Error(`"${selector}:${aIdx}" -- "${expected}" != "${result}"`);
-            }
+            compareValue(`"${selector}:${aIdx}"`, selected.textContent, expected);
         } else if(assert.selectAll) {
             const { selectAll, expected } = assert;
             const selected = elem.querySelectorAll(selectAll);
@@ -151,21 +155,14 @@ async function runTest(selector, data, asserts) {
             if(selected == null) throw new Error(`Assert valueFrom not found -- "${valueFrom}"`);
 
             if(isChecked != null) {
-                const result = selected.checked;
-                if(result !== isChecked) {
-                    throw new Error(`"${selector}:${aIdx}" -- "${isChecked}" != "${result}"`);
-                }
-            } else if(!selected.multiple) {
-                const result = selected.valueAsDate || selected.valueAsNumber || selected.value;
-                if(
-                    result !== expected &&
-                    !(expected instanceof Date && result?.toString() == expected.toString())
-                ) {
-                    throw new Error(`"${selector}:${aIdx}" -- "${expected}" != "${result}"`);
-                }
+                const actual = selected.checked;
+                compareValue(`"${selector}:${aIdx}"`, actual, isChecked);
+            } else if(selected.multiple) {
+                const actual = [ ...selected.selectedOptions ].map(op => op.value);
+                compareArrays(`"${selector}:${aIdx}"`, actual, expected);
             } else {
-                const results = [ ...selected.selectedOptions ].map(op => op.value);
-                compareArrays(`"${selector}:${aIdx}"`, results, expected);
+                const actual = selected.valueAsDate || selected.valueAsNumber || selected.value;
+                compareValue(`"${selector}:${aIdx}"`, actual, expected);
             }
         } else if(assert.path) {
             const { path, expected } = assert;
@@ -175,12 +172,7 @@ async function runTest(selector, data, asserts) {
             for(const part of parts) result = result?.[part];
 
             if(Array.isArray(expected)) { compareArrays(`"${path}:${aIdx}"`, result, expected); }
-            else if(
-                result !== expected &&
-                !(expected instanceof Date && result?.toString() == expected.toString())
-            ) {
-                throw new Error(`"${path}:${aIdx}" -- "${expected}" != "${result}"`);
-            }
+            else { compareValue(`"${path}:${aIdx}"`, result, expected); }
         } else {
             throw new Error("Unknown assert type, " + Object.keys(assert));
         }
