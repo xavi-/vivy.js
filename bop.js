@@ -124,30 +124,38 @@ function updateDom(subtree, data, path, hydrate) {
     }
 }
 
+function toParts(path) {
+    return path?.split(/(?:\.|(?=\[]))/g).filter(p => p.length > 0) ?? [];
+}
 function parsePathParts(elem) {
-    let pathAttr = null, isAssignToAttr = false;
-    for(const attr of elem.attributes) {
-        if (attr.name != "bop" && attr.name.charAt(0) != ".") continue;
+    let scopePath = null, assignToPath = null;
+    const attrPaths = [], eventPaths = [];
 
-        if (pathAttr) {
-            console.warn(`Multiple paths found on element: ${attr}`, elem);
-            continue;
+    const attrs = elem.attributes;
+    for(const attr of attrs) {
+        const name = attr.name;
+
+        if (name == "bop" || name.charAt(0) == ".") {
+            if (scopePath) console.warn(`Multiple scope paths found on element: ${attr}`, elem);
+            else scopePath = toParts(name == "bop" ? attr.value : name);
+        } else if(name.charAt(0) == "@") {
+            eventPaths.push({ event: name.substr(1), path: toParts(attr.value) });
+        } else if(name.charAt(name.length - 1) == ".") {
+            attrPaths.push({ attribute: name.substr(0, -1), path: toParts(attr.value) });
         }
-
-        pathAttr = (attr.name == "bop" ? attr.value : attr.name);
-    }
-    if(
-        pathAttr == null &&
-        (elem.tagName == "INPUT" || elem.tagName == "SELECT" || elem.tagName == "TEXTAREA") &&
-        (elem.attributes["name"]?.value || elem.attributes[":assign-to"]?.value)
-    ) {
-        pathAttr = elem.attributes[":assign-to"]?.value || elem.attributes["name"].value;
-        isAssignToAttr = true;
     }
 
-    const parts = pathAttr?.split(/(?:\.|(?=\[]))/g).filter(p => p.length > 0) ?? [];
+    const tagName = elem.tagName;
+    const isInput = (tagName == "INPUT" || tagName == "SELECT" || tagName == "TEXTAREA");
+    if(!isInput && attrs[":assign-to"]?.value) {
+        console.warn(`Assign-to path found on non-input element`, elem);
+    } else if(isInput) {
+        if(attrs[":assign-to"]?.value) { assignToPath = toParts(attrs[":assign-to"].value); }
+        else if(scopePath != null) { assignToPath = scopePath; scopePath = null; }
+        else if(attrs["name"]?.value) { assignToPath = toParts(attrs["name"].value); }
+    }
 
-    return { parts, pathAttr, isAssignToAttr };
+    return { scopePath, assignToPath, attrPaths, eventPaths };
 }
 
 function getNode(tree, path) {
@@ -233,6 +241,41 @@ function createSyncerIfNecessary(root, path, elem) {
     }
 }
 
+function createArraySubtrees(elem, subtree, array, path, suffix) {
+    if(!Array.isArray(array)) console.warn(`Property type mismatch:`, elem, array);
+
+    const comment = document.createComment("bop:[]");
+    const placement = elem.parentNode.insertBefore(comment, elem);
+    elem.remove();
+
+    const pathAttr = [ ...elem.attributes ].find(attr => attr.name.charAt(0) == ".");
+    if(pathAttr) elem.removeAttribute(pathAttr.name);
+    elem.setAttribute("bop", suffix.join("."));
+
+    subtree.elements = null;
+    subtree.templates ??= [];
+    subtree.templates.push({ placement, element: elem });
+
+    const rtn = [], fragment = document.createDocumentFragment();
+    for(const [ idx, datum ] of Array.from(array ?? []).entries()) {
+        const prop = idx.toString()
+
+        if(!subtree.children.has(prop)) {
+            const child = { proxy: null, elements: [], children: new Map() };
+            subtree.children.set(prop, child);
+        }
+        const datumTree = subtree.children.get(prop);
+        const datumElem = elem.cloneNode(true);
+
+        rtn.push([ datumElem, datumTree, datum, [ ...path, prop ] ]);
+
+        fragment.appendChild(datumElem);
+    }
+    placement.parentNode.insertBefore(fragment, placement);
+
+    return rtn;
+}
+
 function createProxyTree(elem, data) {
     if(!elem) throw new Error("Null element passed in");
 
@@ -310,6 +353,31 @@ function createProxyTree(elem, data) {
         return proxy;
     };
 
+    const traverseToPath = (tree, data, path, traversal) => {
+        let subtree = tree, subData = data, traversed = [ ...path ], idx = 0;
+        for(const part of traversal) {
+            if(subtree.proxy == null) {
+                const isObject = (subData && typeof subData === "object");
+                if(isObject) subtree.proxy = createProxy(traversed, subData);
+            }
+
+            if(part == "[]") break;
+
+            if(!subtree.children.has(part)) {
+                const child = { proxy: null, elements: [], children: new Map() };
+                subtree.children.set(part, child);
+            }
+
+            subtree = subtree.children.get(part);
+            traversed = [ ...traversed, part ];
+            subData = subData?.[part];
+            idx += 1;
+        }
+        const untraversed = traversal.slice(idx);
+
+        return { subtree, subData, traversed, untraversed };
+    };
+
     const hydrate = (elements, data, path) => {
         const root = { elements: [], proxy: null, children: new Map() };
         root.elements = elements.map(element => ({ element }));
@@ -318,80 +386,47 @@ function createProxyTree(elem, data) {
         while((node = nodes.shift())) {
             const [ elem, tree, data, path ] = node;
 
-            const { parts, pathAttr, isAssignToAttr } = parsePathParts(elem);
+            const { scopePath, assignToPath, attrPaths, eventPaths } = parsePathParts(elem);
 
-            let subtree = tree, curData = data, curPath = [ ...path ], idx = 0;
-            for(const part of parts) {
-                if(subtree.proxy == null) {
-                    const isObject = (curData && typeof curData === "object");
-                    if(isObject) subtree.proxy = createProxy(curPath, curData);
+            let scopeTraversal = null;
+            if(!scopePath) {
+                const children = Array.from(elem.children);
+                nodes.push(...children.map(child => [ child, tree, data, path ]));
+            } else {
+                scopeTraversal = traverseToPath(tree, data, path, scopePath);
+                const { subtree, subData, traversed, untraversed } = scopeTraversal;
+
+                if(untraversed[0] == "[]") { // Found array path
+                    const suffix = untraversed.slice(1);
+                    const trees = createArraySubtrees(elem, subtree, subData, traversed, suffix);
+
+                    nodes.push(...trees);
+                    continue;
+                } else {
+                    const children = Array.from(elem.children);
+                    nodes.push(...children.map(child => [ child, subtree, subData, traversed ]));
+
+                    const isObject = (subData && typeof subData === "object");
+                    if(isObject && elem.children.length === 0) {
+                        console.warn("Object never used?", elem, traversed);
+                    }
+
+                    subtree.elements.push({ element: elem });
+                    applyValueToDom(subtree, subData, traversed);
                 }
-
-                if(part == "[]") break;
-
-                if(!subtree.children.has(part)) {
-                    const child = { proxy: null, elements: [], children: new Map() };
-                    subtree.children.set(part, child);
-                }
-
-                subtree = subtree.children.get(part);
-                curPath = [ ...curPath, part ];
-                curData = curData?.[part];
-                idx += 1;
             }
 
-            const foundArray = (idx < parts.length && parts[idx] === "[]");
-            if(foundArray && isAssignToAttr) {
-                throw new Error("Can't have array in `name` of `:assign-to` attributes");
-            } else if(!foundArray) {
-                const children = Array.from(elem.children);
-                if(isAssignToAttr) {
-                    nodes.push(...children.map(child => [ child, tree, data, path ]));
-                } else {
-                    nodes.push(...children.map(child => [ child, subtree, curData, curPath ]));
-                }
+            const scopedTree = scopeTraversal?.subtree ?? tree;
+            const curData = scopeTraversal?.subData ?? data;
+            const curPath = scopeTraversal?.traversed ?? path;
+            if(assignToPath) {
+                const { subtree, traversed, untraversed } =
+                    traverseToPath(scopedTree, curData, curPath, assignToPath);
 
-                if(pathAttr != null) {
-                    const isObject = (curData && typeof curData === "object");
-                    if(isObject && elem.children.length === 0) {
-                        console.warn("Object never used?", elem, curPath);
-                    }
+                if(untraversed.length !== 0) throw new Error(`Can't assign-to an array, ${elem}`);
 
-                    const syncer = createSyncerIfNecessary(root, curPath, elem);
-                    subtree.elements.push({ element: elem, syncer });
-                    applyValueToDom(subtree, curData, curPath);
-                }
-            } else {
-                if(!Array.isArray(curData)) console.warn(`Property type mismatch:`, elem, curData);
-
-                const comment = document.createComment("bop:[]");
-                const placement = elem.parentNode.insertBefore(comment, elem);
-                elem.remove();
-
-                const suffix = parts.slice(idx + 1);
-                elem.removeAttribute(pathAttr);
-                elem.setAttribute("bop", suffix.join("."));
-
-                subtree.elements = null;
-                subtree.templates ??= [];
-                subtree.templates.push({ placement, element: elem });
-
-                const fragment = document.createDocumentFragment();
-                for(const [ idx, datum ] of Array.from(curData ?? []).entries()) {
-                    const prop = idx.toString()
-
-                    if(!subtree.children.has(prop)) {
-                        const child = { proxy: null, elements: [], children: new Map() };
-                        subtree.children.set(prop, child);
-                    }
-                    const datumTree = subtree.children.get(prop);
-                    const datumElem = elem.cloneNode(true);
-
-                    nodes.push([ datumElem, datumTree, datum, [ ...curPath, prop ] ]);
-
-                    fragment.appendChild(datumElem);
-                }
-                placement.parentNode.insertBefore(fragment, placement);
+                const syncer = createSyncerIfNecessary(root, traversed, elem);
+                subtree.elements.push({ element: elem, syncer });
             }
         }
 
