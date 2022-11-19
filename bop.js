@@ -1,11 +1,22 @@
 function applyValueToDom(tree, data) {
-    const isPrimitive = data != null && typeof data !== "object";
+    const isPrimitive = data != null && typeof data !== "object" && typeof data !== "function";
 
     for(const elem of tree.elements) {
-        const tagName = elem.element.tagName;
-        if(tagName == "INPUT" || tagName == "SELECT" || tagName == "TEXTAREA") {
-            const { element, syncer } = elem;
+        if(elem.attribute) {
+            const { element, attribute } = elem;
+            element.setAttribute(attribute, `${data}`);
+        }
 
+        if(elem.event) {
+            const { element, event, callback } = elem;
+            element.addEventListener(event, callback);
+        }
+
+        if(elem.syncer) {
+            const { element, syncer } = elem;
+            element.addEventListener("change", syncer);
+
+            const tagName = element.tagName;
             if(tagName == "INPUT" && element.type == "number") {
                 element.valueAsNumber = data;
             } else if(tagName == "INPUT" && (
@@ -29,14 +40,16 @@ function applyValueToDom(tree, data) {
             } else {
                 element.value = `${data ?? ""}`;
             }
-            element.addEventListener("change", syncer);
         }
-        else if(isPrimitive) { elem.element.textContent = `${data}`; }
-        else if(data == null) {
-            if(tree.children.size > 0)
-                console.warn("Can't populate elements because null found", elem.element)
 
-            if(elem.element.children.length <= 0) elem.element.textContent = "";
+        if(elem.scope) {
+            if(isPrimitive) { elem.element.textContent = `${data}`; }
+            else if(data == null) {
+                if(tree.children.size > 0)
+                    console.warn("Can't populate elements because null found", elem.element)
+
+                if(elem.element.children.length <= 0) elem.element.textContent = "";
+            }
         }
     }
 }
@@ -141,7 +154,7 @@ function parsePathParts(elem) {
         } else if(name.charAt(0) == "@") {
             eventPaths.push({ event: name.substr(1), path: toParts(attr.value) });
         } else if(name.charAt(name.length - 1) == ".") {
-            attrPaths.push({ attribute: name.substr(0, -1), path: toParts(attr.value) });
+            attrPaths.push({ attribute: name.slice(0, -1), path: toParts(attr.value) });
         }
     }
 
@@ -378,11 +391,11 @@ function createProxyTree(elem, data) {
         return { subtree, subData, traversed, untraversed };
     };
 
-    const hydrate = (elements, data, path) => {
+    const hydrate = (elements, rootData, path) => {
         const root = { elements: [], proxy: null, children: new Map() };
-        root.elements = elements.map(element => ({ element }));
+        root.elements = elements.map(element => ({ element, scope: true }));
 
-        let node, nodes = elements.map(elem => [ elem, root, data, path ])
+        let node, nodes = elements.map(elem => [ elem, root, rootData, path ])
         while((node = nodes.shift())) {
             const [ elem, tree, data, path ] = node;
 
@@ -411,22 +424,61 @@ function createProxyTree(elem, data) {
                         console.warn("Object never used?", elem, traversed);
                     }
 
-                    subtree.elements.push({ element: elem });
-                    applyValueToDom(subtree, subData, traversed);
+                    subtree.elements.push({ element: elem, scope: true });
+                    applyValueToDom(subtree, subData);
                 }
             }
 
-            const scopedTree = scopeTraversal?.subtree ?? tree;
+            const curTree = scopeTraversal?.subtree ?? tree;
             const curData = scopeTraversal?.subData ?? data;
             const curPath = scopeTraversal?.traversed ?? path;
             if(assignToPath) {
-                const { subtree, traversed, untraversed } =
-                    traverseToPath(scopedTree, curData, curPath, assignToPath);
+                const { subtree, subData, traversed, untraversed } =
+                    traverseToPath(curTree, curData, curPath, assignToPath);
 
                 if(untraversed.length !== 0) throw new Error(`Can't assign-to an array, ${elem}`);
 
                 const syncer = createSyncerIfNecessary(root, traversed, elem);
                 subtree.elements.push({ element: elem, syncer });
+                applyValueToDom(subtree, subData);
+            }
+
+            for(const { attribute, path } of attrPaths) {
+                const { subtree, subData, untraversed } =
+                    traverseToPath(curTree, curData, curPath, path);
+
+                if(untraversed.length !== 0)
+                    throw new Error(`Attribute path can't reference arrays, ${elem}`);
+
+                elem.removeAttribute(`${attribute}.`);
+                subtree.elements.push({ element: elem, attribute })
+                applyValueToDom(subtree, subData);
+            }
+
+            for(const { event, path } of eventPaths) {
+                const { subtree, subData, traversed, untraversed } =
+                    traverseToPath(curTree, curData, curPath, path);
+
+                if(untraversed.length !== 0)
+                    throw new Error(`Event handler path can't reference arrays, ${elem}`);
+                if(!(subData instanceof Function))
+                    console.warn(`Non-function found for event handler: ${subData}`, elem);
+
+                const parent = traversed.slice(0, -1), prop = traversed.at(-1);
+                const callback = (event) => {
+                    const context = getValue(rootData, parent);
+                    const handler = context[prop];
+
+                    if(handler instanceof Function) {
+                        handler.call(elem, event, context);
+                    } else {
+                        console.warn(`Non-function found`, traversed, elem);
+                    }
+                };
+
+                elem.removeAttribute(`@${event}`);
+                subtree.elements.push({ element: elem, event, callback })
+                applyValueToDom(subtree, subData);
             }
         }
 
