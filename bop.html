@@ -99,6 +99,17 @@
         </select>
     </div>
 
+    <div id="attributes">
+        <div id="attr" attr.=".attr"></div>
+        <div id="num" num.=".number"></div>
+        <div id="bool" bool.=".boolean"></div>
+        <div id="is-null" is-null.=".is_nullish"></div>
+        <div id="class" class.=".is_array"></div>
+        <div id="style" style.=".is_object"></div>
+    </div>
+
+    <button id="events" @click=".clicker" @mouseup=".upper" @mousemove=".mover">button</button>
+
     <div id="playground">
         <button @click=".clicked">button</button>
     </div>
@@ -126,6 +137,7 @@ function compareArrays(context, actual, expected) {
 function compareValue(context, actual, expected) {
     if(actual === expected) return;
     if(expected instanceof Date && actual?.toString() == expected.toString()) return;
+    if(expected == null && actual == null) return;
 
     throw new Error(`${context} -- "${expected}" != "${actual}"`);
 }
@@ -137,6 +149,14 @@ async function runTest(selector, data, asserts) {
     for(const [aIdx, assert] of asserts.entries()) {
         if(typeof assert === "function") {
             await assert(proxy, elem);
+        } else if(assert.attr) {
+            const { selector, attr, expected } = assert;
+
+            const selected = (selector == ".." ? elem : elem.querySelector(selector));
+            if(selected == null) throw new Error(`Assert selector not found -- "${selector}"`);
+
+            const value = selected.attributes[attr]?.value;
+            compareValue(`"${selector}[${attr}]:${aIdx}"`, value, expected);
         } else if(assert.selector) {
             const { selector, expected } = assert;
             const selected = (selector == ".." ? elem : elem.querySelector(selector));
@@ -515,6 +535,100 @@ runTest(
 
         (proxy) => proxy.shift(),
         { valueFrom: "select", expected: [ "b" ] },
+    ]
+);
+runTest(
+    "#attributes",
+    {
+        attr: "hello",
+        number: 52,
+        boolean: true,
+        is_nullish: null,
+        is_array: [ "a", "b", "c" ],
+        is_object: { border: "1px solid blue", color: "green" },
+    },
+    [
+        { selector: "#attr", attr: "attr", expected: "hello" },
+        { selector: "#num", attr: "num", expected: "52" },
+        { selector: "#bool", attr: "bool", expected: "" },
+        { selector: "#is-null", attr: "is-null", expected: null },
+        { selector: "#class", attr: "class", expected: "a b c" },
+        { selector: "#style", attr: "style", expected: "border: 1px solid blue; color: green" },
+
+        (proxy) => proxy.attr = "hi",
+        { selector: "#attr", attr: "attr", expected: "hi" },
+
+        (proxy) => proxy.number = 19,
+        { selector: "#num", attr: "num", expected: "19" },
+
+        (proxy) => proxy.boolean = false,
+        { selector: "#bool", attr: "bool", expected: null },
+
+        (proxy) => proxy.is_nullish = undefined,
+        { selector: "#is-null", attr: "is-null", expected: null },
+
+        (proxy) => proxy.is_array.pop(),
+        { selector: "#class", attr: "class", expected: "a b" },
+
+        (proxy) => proxy.is_array = [],
+        { selector: "#class", attr: "class", expected: "" },
+
+        (proxy) => proxy.is_object["background"] = "red",
+        {
+            selector: "#style",
+            attr: "style",
+            expected: "border: 1px solid blue; color: green; background: red"
+        },
+
+        (proxy) => proxy.is_object = {},
+        { selector: "#style", attr: "style", expected: "" },
+    ]
+);
+runTest(
+    "#events",
+    {
+        clicker: (_, obj) => obj.clickerCalls += 1,
+        clickerCalls: 0,
+
+        upper: (_, obj) => obj.upperCalls += 1,
+        upperCalls: 0,
+
+        mover: (_, obj) => obj.moverCalls += 1,
+        moverCalls: 0,
+    },
+    [
+        (_, elem) => elem.dispatchEvent(new Event("click")),
+        { path: "clickerCalls", expected: 1 },
+
+        (_, elem) => elem.dispatchEvent(new Event("mouseup")),
+        { path: "upperCalls", expected: 1 },
+
+        (_, elem) => elem.dispatchEvent(new Event("mousemove")),
+        { path: "moverCalls", expected: 1 },
+
+        (proxy) => proxy.clicker = (_, obj) => obj.clickerCalls += 10,
+        (_, elem) => elem.dispatchEvent(new Event("click")),
+        { path: "clickerCalls", expected: 11 },
+
+        (proxy) => proxy.upper = (_, obj) => obj.upperCalls += 10,
+        (_, elem) => elem.dispatchEvent(new Event("mouseup")),
+        { path: "upperCalls", expected: 11 },
+
+        (proxy) => proxy.mover = (_, obj) => obj.moverCalls += 10,
+        (_, elem) => elem.dispatchEvent(new Event("mousemove")),
+        { path: "moverCalls", expected: 11 },
+
+        (proxy) => proxy.clicker = null,
+        (_, elem) => elem.dispatchEvent(new Event("click")),
+        { path: "clickerCalls", expected: 11 },
+
+        (proxy) => proxy.upper = null,
+        (_, elem) => elem.dispatchEvent(new Event("mouseup")),
+        { path: "upperCalls", expected: 11 },
+
+        (proxy) => proxy.mover = null,
+        (_, elem) => elem.dispatchEvent(new Event("mousemove")),
+        { path: "moverCalls", expected: 11 },
     ]
 );
 //*/

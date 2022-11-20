@@ -4,12 +4,29 @@ function applyValueToDom(tree, data) {
     for(const elem of tree.elements) {
         if(elem.attribute) {
             const { element, attribute } = elem;
-            element.setAttribute(attribute, `${data}`);
+
+            if(data == null) {
+                element.removeAttribute(attribute);
+            } else if(typeof data == "boolean") {
+                if(data) element.setAttribute(attribute, "");
+                else element.removeAttribute(attribute);
+            } else if(Array.isArray(data)) {
+                element.setAttribute(attribute, data.join(" "));
+            } else if(!isPrimitive) {
+                const value = [];
+                for(const [ key, val ] of data.entries?.() ?? Object.entries(data)) {
+                    value.push(`${key}: ${val}`);
+                }
+
+                element.setAttribute(attribute, value.join("; "));
+            } else {
+                element.setAttribute(attribute, `${data}`);
+            }
         }
 
         if(elem.event) {
-            const { element, event, callback } = elem;
-            element.addEventListener(event, callback);
+            const { element, event, handler } = elem;
+            element.addEventListener(event, handler);
         }
 
         if(elem.syncer) {
@@ -366,6 +383,21 @@ function createProxyTree(elem, data) {
         return proxy;
     };
 
+    const createEventHandler = (elem, traversed) => {
+        const parent = traversed.slice(0, -1), prop = traversed.at(-1);
+
+        return (event) => {
+            const context = getValue(data, parent);
+            const handler = context[prop];
+
+            if(handler instanceof Function) {
+                handler.call(elem, event, context);
+            } else {
+                console.warn(`Non-function found`, traversed, elem);
+            }
+        };
+    };
+
     const traverseToPath = (tree, data, path, traversal) => {
         let subtree = tree, subData = data, traversed = [ ...path ], idx = 0;
         for(const part of traversal) {
@@ -444,14 +476,20 @@ function createProxyTree(elem, data) {
             }
 
             for(const { attribute, path } of attrPaths) {
-                const { subtree, subData, untraversed } =
+                const { subtree, subData, traversed, untraversed } =
                     traverseToPath(curTree, curData, curPath, path);
 
                 if(untraversed.length !== 0)
                     throw new Error(`Attribute path can't reference arrays, ${elem}`);
 
                 elem.removeAttribute(`${attribute}.`);
+
                 subtree.elements.push({ element: elem, attribute })
+                if(subtree.proxy == null) {
+                    const isObject = (subData && typeof subData === "object");
+                    if(isObject) subtree.proxy = createProxy(traversed, subData);
+                }
+
                 applyValueToDom(subtree, subData);
             }
 
@@ -464,20 +502,10 @@ function createProxyTree(elem, data) {
                 if(!(subData instanceof Function))
                     console.warn(`Non-function found for event handler: ${subData}`, elem);
 
-                const parent = traversed.slice(0, -1), prop = traversed.at(-1);
-                const callback = (event) => {
-                    const context = getValue(rootData, parent);
-                    const handler = context[prop];
-
-                    if(handler instanceof Function) {
-                        handler.call(elem, event, context);
-                    } else {
-                        console.warn(`Non-function found`, traversed, elem);
-                    }
-                };
-
                 elem.removeAttribute(`@${event}`);
-                subtree.elements.push({ element: elem, event, callback })
+
+                const handler = createEventHandler(elem, traversed);
+                subtree.elements.push({ element: elem, event, handler })
                 applyValueToDom(subtree, subData);
             }
         }
