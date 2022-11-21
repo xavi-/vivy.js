@@ -235,7 +235,7 @@ function getValue(data, path) {
     return rtn;
 }
 
-function createSyncerIfNecessary(root, path, elem) {
+function createSyncer(root, path, elem) {
     const tagName = elem.tagName
     if(tagName != "INPUT" && tagName != "SELECT" && tagName != "TEXTAREA") return null;
 
@@ -497,7 +497,7 @@ function createProxyTree(elem, data) {
 
                 if(untraversed.length !== 0) throw new Error(`Can't assign-to an array, ${elem}`);
 
-                const syncer = createSyncerIfNecessary(root, traversed, elem);
+                const syncer = createSyncer(root, traversed, elem);
                 subtree.elements.push({ element: elem, syncer });
                 applyValueToDom(subtree, subData);
             }
