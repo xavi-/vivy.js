@@ -387,8 +387,8 @@ function createProxyTree(elem, data) {
         const parent = traversed.slice(0, -1), prop = traversed.at(-1);
 
         return (event) => {
-            const context = getValue(data, parent);
-            const handler = context[prop];
+            const context = getNode(tree, parent).proxy;
+            const handler = getValue(data, traversed);
 
             if(handler instanceof Function) {
                 handler.call(elem, event, context);
