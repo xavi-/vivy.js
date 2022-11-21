@@ -24,6 +24,18 @@ function applyValueToDom(tree, data) {
             }
         }
 
+        if(elem.showIf) {
+            const { element, showIf: { negated, placement } } = elem;
+            const showElem = ((negated ^ !!data) === 1);
+            const isShowing = (element.parentNode != null);
+
+            if(showElem && !isShowing) {
+                placement.parentNode.insertBefore(element, placement);
+            } else if(!showElem && isShowing) {
+                element.remove();
+            }
+        }
+
         if(elem.event) {
             const { element, event, handler } = elem;
             element.addEventListener(event, handler);
@@ -158,20 +170,24 @@ function toParts(path) {
     return path?.split(/(?:\.|(?=\[]))/g).filter(p => p.length > 0) ?? [];
 }
 function parsePathParts(elem) {
-    let scopePath = null, assignToPath = null;
+    let scopePath = null, assignToPath = null, showIfPath = null;
     const attrPaths = [], eventPaths = [];
 
     const attrs = elem.attributes;
     for(const attr of attrs) {
-        const name = attr.name;
+        const name = attr.name, value = attr.value;
 
-        if (name == "bop" || name.charAt(0) == ".") {
+        if ((name == "bop" || name.charAt(0) == ".") && name.at(-1) != "?") {
             if (scopePath) console.warn(`Multiple scope paths found on element: ${attr}`, elem);
-            else scopePath = toParts(name == "bop" ? attr.value : name);
+            else scopePath = toParts(name == "bop" ? value : name);
         } else if(name.charAt(0) == "@") {
-            eventPaths.push({ event: name.substr(1), path: toParts(attr.value) });
+            eventPaths.push({ event: name.substr(1), path: toParts(value) });
+        } else if(name.charAt(0) == "!" || name.at(-1) == "?") {
+            const negated = name.charAt(0) == "!";
+            const start = (negated ? 1 : 0), end = (name.at(-1) == "?" ? -1 : name.length);
+            showIfPath = { negated, path: toParts(name.slice(start, end)) };
         } else if(name.charAt(name.length - 1) == ".") {
-            attrPaths.push({ attribute: name.slice(0, -1), path: toParts(attr.value) });
+            attrPaths.push({ attribute: name.slice(0, -1), path: toParts(value) });
         }
     }
 
@@ -185,7 +201,16 @@ function parsePathParts(elem) {
         else if(attrs["name"]?.value) { assignToPath = toParts(attrs["name"].value); }
     }
 
-    return { scopePath, assignToPath, attrPaths, eventPaths };
+    if(attrs[":show-if"]?.value) {
+        if(showIfPath) console.warn(`Multiple show-if specifier found`, elem);
+
+        const value = attrs[":show-if"].value;
+        const negated = value.charAt(0) == "!";
+        const start = (negated ? 1 : 0), end = (value.at(-1) == "?" ? -1 : value.length);
+        showIfPath = { negated, path: toParts(value.slice(start, end)) };
+    }
+
+    return { scopePath, assignToPath, showIfPath, attrPaths, eventPaths };
 }
 
 function getNode(tree, path) {
@@ -431,7 +456,9 @@ function createProxyTree(elem, data) {
         while((node = nodes.shift())) {
             const [ elem, tree, data, path ] = node;
 
-            const { scopePath, assignToPath, attrPaths, eventPaths } = parsePathParts(elem);
+            const {
+                scopePath, assignToPath, showIfPath, attrPaths, eventPaths
+            } = parsePathParts(elem);
 
             let scopeTraversal = null;
             if(!scopePath) {
@@ -472,6 +499,20 @@ function createProxyTree(elem, data) {
 
                 const syncer = createSyncerIfNecessary(root, traversed, elem);
                 subtree.elements.push({ element: elem, syncer });
+                applyValueToDom(subtree, subData);
+            }
+
+            if(showIfPath) {
+                const { subtree, subData, untraversed } =
+                    traverseToPath(curTree, curData, curPath, showIfPath.path);
+
+                if(untraversed.length !== 0) throw new Error(`Can't show-if an array, ${elem}`);
+
+                const comment = document.createComment("bop:show-if");
+                const negated = showIfPath.negated ;
+                const placement = elem.parentNode.insertBefore(comment, elem);
+
+                subtree.elements.push({ element: elem, showIf: { negated, placement} });
                 applyValueToDom(subtree, subData);
             }
 

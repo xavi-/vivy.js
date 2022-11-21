@@ -110,6 +110,20 @@
 
     <button id="events" @click=".clicker" @mouseup=".upper" @mousemove=".mover">button</button>
 
+    <div id="show-hide">
+        <div id="show" :show-if=".show?">showing</div>
+        <div id="neg-show" :show-if="!.show?">showing</div>
+
+        <div id="inline-show" .show?>showing</div>
+        <div id="inline-neg-show" !.show?>showing</div>
+
+        <ul .arr.length?>
+            <li .arr[]></li>
+        </ul>
+
+        <strong .!falsy?>all falsy?</strong>
+    </div>
+
     <div id="playground">
         <button @click=".clicked">button</button>
     </div>
@@ -160,6 +174,7 @@ async function runTest(selector, data, asserts) {
         } else if(assert.selector) {
             const { selector, expected } = assert;
             const selected = (selector == ".." ? elem : elem.querySelector(selector));
+            if(expected == null && selected == null) continue;
             if(selected == null) throw new Error(`Assert selector not found -- "${selector}"`);
 
             compareValue(`"${selector}:${aIdx}"`, selected.textContent, expected);
@@ -629,6 +644,33 @@ runTest(
         (proxy) => proxy.mover = null,
         (_, elem) => elem.dispatchEvent(new Event("mousemove")),
         { path: "moverCalls", expected: 11 },
+    ]
+);
+runTest(
+    "#show-hide",
+    { show: true, arr: [ "a", "b", "c" ], falsy: 0 },
+    [
+        { selector: "#show", expected: "showing" },
+        { selector: "#neg-show", expected: null },
+        { selector: "#inline-show", expected: "showing" },
+        { selector: "#inline-neg-show", expected: null },
+        { selectAll: "li", expected: [ "a", "b", "c" ] },
+        { selector: "strong", expected: null },
+
+        (proxy) => proxy.show = false,
+        { selector: "#show", expected: null },
+        { selector: "#neg-show", expected: "showing" },
+        { selector: "#inline-show", expected: null },
+        { selector: "#inline-neg-show", expected: "showing" },
+
+        (proxy) => proxy.arr.length = 0,
+        { selector: "ul", expected: null },
+
+        (proxy) => proxy.falsy = null,
+        { selector: "strong", expected: null },
+
+        (proxy) => proxy.falsy = "",
+        { selector: "strong", expected: null },
     ]
 );
 //*/
