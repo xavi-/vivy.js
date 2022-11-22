@@ -100,7 +100,7 @@
     </div>
 
     <div id="attributes">
-        <div id="attr" attr.=".attr"></div>
+        <div id="attr" attr.=".attr" normal="okay"></div>
         <div id="num" num.=".number"></div>
         <div id="bool" bool.=".boolean"></div>
         <div id="is-null" is-null.=".is_nullish"></div>
@@ -122,6 +122,29 @@
         </ul>
 
         <strong .!falsy?>all falsy?</strong>
+    </div>
+
+    <div id="root-reference">
+        <div .obj>
+            <em .text></em>
+            <strong .$.text></strong>
+            <span $.text></span>
+            <button id="inner" @click="$.randomText">inner context</button>
+
+            <input id="input1" $.input1>
+            <input id="input2" :assign-to="$.input2">
+            <div id="root-show" $.opt.show? class.="$.opt.classes">hello</div>
+        </div>
+        <button id="outer" @click=".randomText">outer context</button>
+    </div>
+
+    <div id="root-reference-arrays">
+        <ul .lists[]>
+            <li .[]>
+                <span .text></span> <button @click="$.change">add</button>
+            </li>
+            <li $.base class="base"></li>
+        </ul>
     </div>
 
     <div id="playground">
@@ -593,6 +616,7 @@ runTest(
     },
     [
         { selector: "#attr", attr: "attr", expected: "hello" },
+        { selector: "#attr", attr: "normal", expected: "okay" },
         { selector: "#num", attr: "num", expected: "52" },
         { selector: "#bool", attr: "bool", expected: "" },
         { selector: "#is-null", attr: "is-null", expected: null },
@@ -700,6 +724,77 @@ runTest(
 
         (proxy) => proxy.falsy = "",
         { selector: "strong", expected: null },
+    ]
+);
+runTest(
+    "#root-reference",
+    {
+        obj: { text: "hi" },
+        text: "hello",
+        randomText: (_, obj) => obj.text += " okay",
+
+        input1: "input",
+        input2: "another",
+
+        opt: { show: false, classes: [ "a", "b" ] }
+    },
+    [
+        { selector: "em", expected: "hi" },
+        { selector: "strong", expected: "hello" },
+        { selector: "span", expected: "hello" },
+        { valueFrom: "#input1", expected: "input" },
+        { valueFrom: "#input2", expected: "another" },
+        { selector: "#root-show", expected: null },
+
+        (_, elem) => elem.querySelector("#inner").dispatchEvent(new Event("click")),
+        { selector: "em", expected: "hi okay" },
+        { selector: "strong", expected: "hello" },
+        { selector: "span", expected: "hello" },
+
+        (_, elem) => elem.querySelector("#outer").dispatchEvent(new Event("click")),
+        { selector: "em", expected: "hi okay" },
+        { selector: "strong", expected: "hello okay" },
+        { selector: "span", expected: "hello okay" },
+
+        (_, elem) => {
+            const input = elem.querySelector("#input1");
+            input.value = "another input";
+            input.dispatchEvent(new Event("change"))
+        },
+        { valueFrom: "#input1", expected: "another input" },
+
+        (_, elem) => {
+            const input = elem.querySelector("#input2");
+            input.value = "another input";
+            input.dispatchEvent(new Event("change"))
+        },
+        { valueFrom: "#input2", expected: "another input" },
+
+        (proxy) => proxy.opt.show = true,
+        { selector: "#root-show", expected: "hello" },
+        { selector: "#root-show", attr: "class", expected: "a b" },
+
+        (proxy) => proxy.opt.classes.push("c"),
+        { selector: "#root-show", attr: "class", expected: "a b c" },
+    ]
+);
+runTest(
+    "#root-reference-arrays",
+    {
+        lists: [
+            [ { text: "a" }, { text: "b" }, { text: "c" } ],
+            [ { text: "x" }, { text: "y" }, { text: "z" } ],
+        ],
+        change: (_, obj) => obj.text += "!",
+        base: "base",
+    },
+    [
+        { selectAll: ".base", expected: [ "base", "base" ] },
+
+        (_, elem) => [
+            ...elem.querySelectorAll("button")
+        ].forEach((elem, idx) => idx % 2 && elem.dispatchEvent(new Event("click"))),
+        { selectAll: "li span", expected: [ "a", "b!", "c", "x!", "y", "z!" ] },
     ]
 );
 //*/

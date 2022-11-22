@@ -177,7 +177,10 @@ function parsePathParts(elem) {
     for(const attr of attrs) {
         const name = attr.name, value = attr.value;
 
-        if ((name == "bop" || name.charAt(0) == ".") && name.at(-1) != "?") {
+        if ((
+            name == "bop" || name.charAt(0) == "." ||
+            (name.charAt(0) == "$" && name.charAt(1) == ".")
+        ) && name.at(-1) != "?") {
             if (scopePath) console.warn(`Multiple scope paths found on element: ${attr}`, elem);
             else scopePath = toParts(name == "bop" ? value : name);
         } else if(name.charAt(0) == "@") {
@@ -408,23 +411,29 @@ function createProxyTree(elem, rootData) {
         return proxy;
     };
 
-    const createEventHandler = (elem, traversed) => {
-        const parent = traversed.slice(0, -1), prop = traversed.at(-1);
-
+    const createEventHandler = (elem, handlerPath, contextPath) => {
         return (event) => {
-            const context = getNode(rootTree, parent).proxy;
-            const handler = getValue(data, traversed);
+            const handler = getValue(rootData, handlerPath);
+            const context = getNode(rootTree, contextPath).proxy;
 
             if(handler instanceof Function) {
                 handler.call(elem, event, context);
             } else {
-                console.warn(`Non-function found`, traversed, elem);
+                console.warn(`Non-function found`, handlerPath, elem);
             }
         };
     };
 
-    const traverseToPath = (tree, data, path, traversal) => {
+    const traverseToPath = (root, tree, data, path, traversal) => {
         let subtree = tree, subData = data, traversed = [ ...path ], idx = 0;
+
+        if(traversal[0] == "$") {
+            subtree = root;
+            subData = rootData;
+            traversed = [];
+            traversal = traversal.slice(1);
+        }
+
         for(const part of traversal) {
             if(subtree.proxy == null) {
                 const isObject = (subData && typeof subData === "object");
@@ -465,7 +474,7 @@ function createProxyTree(elem, rootData) {
                 const children = Array.from(elem.children);
                 nodes.push(...children.map(child => [ child, tree, data, path ]));
             } else {
-                scopeTraversal = traverseToPath(tree, data, path, scopePath);
+                scopeTraversal = traverseToPath(root, tree, data, path, scopePath);
                 const { subtree, subData, traversed, untraversed } = scopeTraversal;
 
                 if(untraversed[0] == "[]") { // Found array path
@@ -493,7 +502,7 @@ function createProxyTree(elem, rootData) {
             const curPath = scopeTraversal?.traversed ?? path;
             if(assignToPath) {
                 const { subtree, subData, traversed, untraversed } =
-                    traverseToPath(curTree, curData, curPath, assignToPath);
+                    traverseToPath(root, curTree, curData, curPath, assignToPath);
 
                 if(untraversed.length !== 0) throw new Error(`Can't assign-to an array, ${elem}`);
 
@@ -504,7 +513,7 @@ function createProxyTree(elem, rootData) {
 
             if(showIfPath) {
                 const { subtree, subData, untraversed } =
-                    traverseToPath(curTree, curData, curPath, showIfPath.path);
+                    traverseToPath(root, curTree, curData, curPath, showIfPath.path);
 
                 if(untraversed.length !== 0) throw new Error(`Can't show-if an array, ${elem}`);
 
@@ -518,7 +527,7 @@ function createProxyTree(elem, rootData) {
 
             for(const { attribute, path } of attrPaths) {
                 const { subtree, subData, traversed, untraversed } =
-                    traverseToPath(curTree, curData, curPath, path);
+                    traverseToPath(root, curTree, curData, curPath, path);
 
                 if(untraversed.length !== 0)
                     throw new Error(`Attribute path can't reference arrays, ${elem}`);
@@ -536,7 +545,7 @@ function createProxyTree(elem, rootData) {
 
             for(const { event, path } of eventPaths) {
                 const { subtree, subData, traversed, untraversed } =
-                    traverseToPath(curTree, curData, curPath, path);
+                    traverseToPath(root, curTree, curData, curPath, path);
 
                 if(untraversed.length !== 0)
                     throw new Error(`Event handler path can't reference arrays, ${elem}`);
@@ -545,7 +554,8 @@ function createProxyTree(elem, rootData) {
 
                 elem.removeAttribute(`@${event}`);
 
-                const handler = createEventHandler(elem, traversed);
+                const contextPath = (path[0] == "$" ? curPath : traversed.slice(0, -1));
+                const handler = createEventHandler(elem, traversed, contextPath);
                 subtree.elements.push({ element: elem, event, handler })
                 applyValueToDom(subtree, subData);
             }
