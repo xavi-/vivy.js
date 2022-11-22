@@ -356,13 +356,13 @@ function createProxyTree(elem, rootData) {
         }
         const proxy = new Proxy(target, {
             get(_, prop) {
-                const value = getValue(data, path);
+                const value = getValue(rootData, path);
                 if(value == null) console.warn(`Read property of ${value} (reading '${prop}')`);
 
                 return getNode(rootTree, [ ...path, prop ])?.proxy ?? value?.[prop];
             },
             set(_, prop, value) {
-                const parent = getValue(data, path);
+                const parent = getValue(rootData, path);
                 if(parent == null)
                     throw new Error(`Cannot set properties of ${value} (reading '${prop}')`);
 
@@ -387,7 +387,7 @@ function createProxyTree(elem, rootData) {
                 return true;
             },
             deleteProperty(_, prop) {
-                const parent = getValue(data, path);
+                const parent = getValue(rootData, path);
                 if(parent == null) return false;
 
                 const rtn = delete parent[prop];
@@ -401,8 +401,8 @@ function createProxyTree(elem, rootData) {
 
                 return rtn;
             },
-            ownKeys() { return Reflect.ownKeys(getValue(data, path)); },
-            has(_, key) { return Reflect.has(getValue(data, path), key); },
+            ownKeys() { return Reflect.ownKeys(getValue(rootData, path)); },
+            has(_, key) { return Reflect.has(getValue(rootData, path), key); },
         });
 
         return proxy;
