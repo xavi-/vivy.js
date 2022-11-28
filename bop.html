@@ -795,6 +795,16 @@ runTest(
             ...elem.querySelectorAll("button")
         ].forEach((elem, idx) => idx % 2 && elem.dispatchEvent(new Event("click"))),
         { selectAll: "li span", expected: [ "a", "b!", "c", "x!", "y", "z!" ] },
+
+        // Test here to ensure bootstrapping issue
+        (proxy) => proxy.base = "BASE",
+        { selectAll: ".base", expected: [ "BASE", "BASE" ] },
+
+        (proxy) => {
+            proxy.lists.push([ { text: "new" } ]);
+            proxy.base = "??";
+        },
+        { selectAll: ".base", expected: [ "??", "??", "??" ] },
     ]
 );
 //*/

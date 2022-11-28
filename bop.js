@@ -337,6 +337,8 @@ function createArraySubtrees(elem, subtree, array, path, suffix) {
 function createProxyTree(elem, rootData) {
 	if(!elem) throw new Error("Null element passed in");
 
+	let treeRoot = null;
+
 	const createProxy = (path, initValue) => {
 		const _updateDom = (node, value) => updateDom(node, value, path, hydrate);
 		const updateValue = (value) => {
@@ -458,10 +460,15 @@ function createProxyTree(elem, rootData) {
 	};
 
 	const hydrate = (elements, data, path) => {
-		const root = { elements: [], proxy: null, children: new Map() };
-		root.elements = elements.map(element => ({ element, scope: true }));
+		const hydrateRoot = { elements: [], proxy: null, children: new Map() };
+		hydrateRoot.elements = elements.map(element => ({ element, scope: true }));
 
-		let node, nodes = elements.map(elem => [ elem, root, data, path ])
+		// Bootstrapping issue: the `hydrate` function is used to populate `treeRoot`.
+		// On the first call of `hydrate`, `treeRoot` is null.  The `root` value is need to
+		// properly support paths that start with `$.`
+		const root = treeRoot ?? hydrateRoot;
+
+		let node, nodes = elements.map(elem => [ elem, hydrateRoot, data, path ])
 		while((node = nodes.shift())) {
 			const [ elem, tree, data, path ] = node;
 
@@ -561,10 +568,10 @@ function createProxyTree(elem, rootData) {
 			}
 		}
 
-		return root;
+		return hydrateRoot;
 	};
 
-	const treeRoot = hydrate([ elem ], rootData, []);
+	treeRoot = hydrate([ elem ], rootData, []);
 	if(!treeRoot.proxy) {
 		treeRoot.proxy = createProxy([], rootData);
 		treeRoot.proxy(rootData);
