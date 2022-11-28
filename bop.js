@@ -169,7 +169,7 @@ function updateDom(subtree, data, path, hydrate) {
 function toParts(path) {
 	return path?.split(/(?:\.|(?=\[]))/g).filter(p => p.length > 0) ?? [];
 }
-function parsePathParts(elem) {
+function parseAttributesToPaths(elem) {
 	let scopePath = null, assignToPath = null, showIfPath = null;
 	const attrPaths = [], eventPaths = [];
 
@@ -467,7 +467,7 @@ function createProxyTree(elem, rootData) {
 
 			const {
 				scopePath, assignToPath, showIfPath, attrPaths, eventPaths
-			} = parsePathParts(elem);
+			} = parseAttributesToPaths(elem);
 
 			let scopeTraversal = null;
 			if(!scopePath) {
