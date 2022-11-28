@@ -518,7 +518,7 @@ function createProxyTree(elem, rootData) {
 				if(untraversed.length !== 0) throw new Error(`Can't show-if an array, ${elem}`);
 
 				const comment = document.createComment("bop:show-if");
-				const negated = showIfPath.negated ;
+				const negated = showIfPath.negated;
 				const placement = elem.parentNode.insertBefore(comment, elem);
 
 				subtree.elements.push({ element: elem, showIf: { negated, placement} });
