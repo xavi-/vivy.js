@@ -576,7 +576,6 @@ function createProxyTree(elem, rootData) {
 		treeRoot.proxy = createProxy([], rootData);
 		treeRoot.proxy(rootData);
 	}
-	treeRoot.proxy(rootData); // This is not efficient or ideal
 
 	window.tree = treeRoot;
 
