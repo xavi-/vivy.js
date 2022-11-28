@@ -346,7 +346,7 @@ function createProxyTree(elem, rootData) {
 				parent[path[path.length - 1]] = value;
 			}
 
-			const node = getNode(rootTree, path);
+			const node = getNode(treeRoot, path);
 			_updateDom(node, value);
 
 			return node.proxy;
@@ -362,14 +362,14 @@ function createProxyTree(elem, rootData) {
 				const value = getValue(rootData, path);
 				if(value == null) console.warn(`Read property of ${value} (reading '${prop}')`);
 
-				return getNode(rootTree, [ ...path, prop ])?.proxy ?? value?.[prop];
+				return getNode(treeRoot, [ ...path, prop ])?.proxy ?? value?.[prop];
 			},
 			set(_, prop, value) {
 				const parent = getValue(rootData, path);
 				if(parent == null)
 					throw new Error(`Cannot set properties of ${value} (reading '${prop}')`);
 
-				const node = getNode(rootTree, path);
+				const node = getNode(treeRoot, path);
 				const isArray = !!node.templates;
 
 				const prevLength = (isArray ? parent.length : -1);
@@ -397,7 +397,7 @@ function createProxyTree(elem, rootData) {
 
 				if(!rtn) return false;
 
-				const node = getNode(rootTree, path);
+				const node = getNode(treeRoot, path);
 				if(node.children.has(prop)) {
 					_updateDom(node.children.get(prop), null);
 				}
@@ -414,7 +414,7 @@ function createProxyTree(elem, rootData) {
 	const createEventHandler = (elem, handlerPath, contextPath) => {
 		return (event) => {
 			const handler = getValue(rootData, handlerPath);
-			const context = getNode(rootTree, contextPath).proxy;
+			const context = getNode(treeRoot, contextPath).proxy;
 
 			if(handler instanceof Function) {
 				handler.call(elem, event, context);
@@ -564,16 +564,16 @@ function createProxyTree(elem, rootData) {
 		return root;
 	};
 
-	const rootTree = hydrate([ elem ], rootData, []);
-	if(!rootTree.proxy) {
-		rootTree.proxy = createProxy([], rootData);
-		rootTree.proxy(rootData);
+	const treeRoot = hydrate([ elem ], rootData, []);
+	if(!treeRoot.proxy) {
+		treeRoot.proxy = createProxy([], rootData);
+		treeRoot.proxy(rootData);
 	}
-	rootTree.proxy(rootData); // This is not efficient or ideal
+	treeRoot.proxy(rootData); // This is not efficient or ideal
 
-	window.tree = rootTree;
+	window.tree = treeRoot;
 
-	return rootTree;
+	return treeRoot;
 }
 
 export function bop(elem, data) { return createProxyTree(elem, data).proxy; }
