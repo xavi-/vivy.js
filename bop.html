@@ -17,11 +17,11 @@
             </div>
         </section>
         <div .deep.example1 id="deep1"></div>
-        <div .deep.example2><span .deeper id="deep2"></span></div>
+        <div .deep.example2 id="example2"><span .deeper id="deep2"></span></div>
     </div>
 
     <div id="duplicates">
-        <div .a><div .b><div .c id="ref1"></div></div></div>
+        <div .a id="ref3"><div .b><div .c id="ref1"></div></div></div>
         <div .a.b.c id="ref2"></div>
     </div>
 
@@ -321,6 +321,12 @@ runTest(
 
         (proxy) => proxy.deep.example2.deeper = "example2 update",
         { selector: "#deep2", expected: "example2 update" },
+
+        (proxy) => proxy.deep.example2 = "hi",
+        { selector: "#example2", expected: "hi" },
+
+        (proxy) => proxy.deep.example2 = { deeper: "back" },
+        { selector: "#deep2", expected: "back" },
     ]
 );
 runTest(
@@ -334,9 +340,19 @@ runTest(
         { selector: "#ref1", expected: "123" },
         { selector: "#ref2", expected: "123" },
 
+        (proxy) => proxy.a = "gone",
+        { selector: "#ref2", expected: "" },
+        { selector: "#ref3", expected: "gone" },
+
+        (proxy) => proxy.a = { b: { c : "back" } },
+        { selector: "#ref1", expected: "back" },
+        { selector: "#ref2", expected: "back" },
+        { selector: "#ref3", expected: "back" },
+
         (proxy) => proxy.a(null),
         { selector: "#ref1", expected: "" },
         { selector: "#ref2", expected: "" },
+        { selector: "#ref3", expected: "" },
     ]
 );
 runTest(

@@ -72,12 +72,31 @@ function applyValueToDom(tree, data) {
 		}
 
 		if(elem.scope) {
-			if(isPrimitive) { elem.element.textContent = `${data}`; }
-			else if(data == null) {
-				if(tree.children.size > 0)
-					console.warn("Can't populate elements because null found", elem.element)
+			const { element } = elem;
 
-				if(elem.element.children.length <= 0) elem.element.textContent = "";
+			if(isPrimitive) {
+				const childCount = element.children.length;
+				if(childCount > 0) {
+					console.warn(`Value "${data}" overrides ${childCount} child elements`);
+					if(!tree.originalChildElements) {
+						tree.originalChildElements = Array.from(element.children);
+					}
+				}
+
+				element.textContent = `${data}`;
+			} else if(data == null) {
+				if(tree.children.size > 0)
+					console.warn("Can't populate elements because null found", element)
+
+				if(element.children.length <= 0) element.textContent = "";
+			} else if(tree.originalChildElements && element.children.length <= 0) {
+				element.textContent = "";
+
+				const fragment = document.createDocumentFragment();
+				for(const child of tree.originalChildElements) {
+					fragment.appendChild(child);
+				}
+				element.appendChild(fragment);
 			}
 		}
 	}
