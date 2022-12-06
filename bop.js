@@ -25,12 +25,13 @@ function applyValueToDom(tree, data) {
 		}
 
 		if(elem.showIf) {
-			const { element, showIf: { negated, placement } } = elem;
+			const { element, showIf: { negated, placement, hydrate } } = elem;
 			const showElem = ((negated ^ !!data) === 1);
 			const isShowing = (element.parentNode != null);
 
-			if(showElem && !isShowing) {
-				placement.parentNode.insertBefore(element, placement);
+			if(showElem) {
+				hydrate();
+				if(!isShowing) placement.parentNode.insertBefore(element, placement);
 			} else if(!showElem && isShowing) {
 				element.remove();
 			}
@@ -207,7 +208,7 @@ function parseAttributesToPaths(elem) {
 		} else if(name.charAt(0) == "!" || name.at(-1) == "?") {
 			const negated = name.charAt(0) == "!";
 			const start = (negated ? 1 : 0), end = (name.at(-1) == "?" ? -1 : name.length);
-			showIfPath = { negated, path: toParts(name.slice(start, end)) };
+			showIfPath = { negated, path: toParts(name.slice(start, end)), attr: name };
 		} else if(name.charAt(name.length - 1) == ".") {
 			attrPaths.push({ attribute: name.slice(0, -1), path: toParts(value) });
 		}
@@ -229,7 +230,7 @@ function parseAttributesToPaths(elem) {
 		const value = attrs[":show-if"].value;
 		const negated = value.charAt(0) == "!";
 		const start = (negated ? 1 : 0), end = (value.at(-1) == "?" ? -1 : value.length);
-		showIfPath = { negated, path: toParts(value.slice(start, end)) };
+		showIfPath = { negated, path: toParts(value.slice(start, end)), attr: ":show-if" };
 	}
 
 	return { scopePath, assignToPath, showIfPath, attrPaths, eventPaths };
@@ -478,9 +479,12 @@ function createProxyTree(elem, rootData) {
 		return { subtree, subData, traversed, untraversed };
 	};
 
-	const hydrate = (elements, data, path) => {
-		const hydrateRoot = { elements: [], proxy: null, children: new Map() };
-		hydrateRoot.elements = elements.map(element => ({ element, scope: true }));
+	const hydrate = (elements, data, path, startRoot) => {
+		const hydrateRoot = startRoot ?? {
+			elements: elements.map(element => ({ element, scope: true })),
+			proxy: null,
+			children: new Map()
+		};
 
 		// Bootstrapping issue: the `hydrate` function is used to populate `treeRoot`.
 		// On the first call of `hydrate`, `treeRoot` is null.  The `root` value is need to
@@ -495,33 +499,7 @@ function createProxyTree(elem, rootData) {
 				scopePath, assignToPath, showIfPath, attrPaths, eventPaths
 			} = parseAttributesToPaths(elem);
 
-			let scopeTraversal = null;
-			if(!scopePath) {
-				const children = Array.from(elem.children);
-				nodes.push(...children.map(child => [ child, tree, data, path ]));
-			} else {
-				scopeTraversal = traverseToPath(root, tree, data, path, scopePath);
-				const { subtree, subData, traversed, untraversed } = scopeTraversal;
-
-				if(untraversed[0] == "[]") { // Found array path
-					const suffix = untraversed.slice(1);
-					const trees = createArraySubtrees(elem, subtree, subData, traversed, suffix);
-
-					nodes.push(...trees);
-					continue;
-				} else {
-					const children = Array.from(elem.children);
-					nodes.push(...children.map(child => [ child, subtree, subData, traversed ]));
-
-					const isObject = (subData && typeof subData === "object");
-					if(isObject && elem.children.length === 0) {
-						console.warn("Object never used?", elem, traversed);
-					}
-
-					subtree.elements.push({ element: elem, scope: true });
-					applyValueToDom(subtree, subData);
-				}
-			}
+			const scopeTraversal = scopePath && traverseToPath(root, tree, data, path, scopePath);
 
 			const curTree = scopeTraversal?.subtree ?? tree;
 			const curData = scopeTraversal?.subData ?? data;
@@ -547,7 +525,19 @@ function createProxyTree(elem, rootData) {
 				const negated = showIfPath.negated;
 				const placement = elem.parentNode.insertBefore(comment, elem);
 
-				subtree.elements.push({ element: elem, showIf: { negated, placement} });
+				elem.removeAttribute(showIfPath.attr);
+
+				let isHydrated = false;
+				const params = {
+					negated, placement, hydrate: () => {
+						if(isHydrated) return;
+
+						// Ignore scopeTraversal to ensure arrays are handled correctly
+						hydrate([ elem ], data, path, tree);
+						isHydrated = true;
+					},
+				};
+				subtree.elements.push({ element: elem, showIf: params });
 				applyValueToDom(subtree, subData);
 			}
 
@@ -584,6 +574,34 @@ function createProxyTree(elem, rootData) {
 				const handler = createEventHandler(elem, traversed, contextPath);
 				subtree.elements.push({ element: elem, event, handler })
 				applyValueToDom(subtree, subData);
+			}
+
+			if(showIfPath) {
+				continue; // Lazy hydrate elements with `:show-if` attributes
+			} else if(!scopePath) {
+				const children = Array.from(elem.children);
+				nodes.push(...children.map(child => [ child, tree, data, path ]));
+			} else {
+				const { subtree, subData, traversed, untraversed } = scopeTraversal;
+
+				if(untraversed[0] == "[]") { // Found array path
+					const suffix = untraversed.slice(1);
+					const trees = createArraySubtrees(elem, subtree, subData, traversed, suffix);
+
+					nodes.push(...trees);
+					continue;
+				} else {
+					const children = Array.from(elem.children);
+					nodes.push(...children.map(child => [ child, subtree, subData, traversed ]));
+
+					const isObject = (subData && typeof subData === "object");
+					if(isObject && elem.children.length === 0) {
+						console.warn("Object never used?", elem, traversed);
+					}
+
+					subtree.elements.push({ element: elem, scope: true });
+					applyValueToDom(subtree, subData);
+				}
 			}
 		}
 
