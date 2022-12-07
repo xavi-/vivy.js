@@ -397,7 +397,7 @@ function findTemplates(elemRoot) {
 	return rtn;
 }
 
-function replaceTemplate(elem, template, scopePath, showIfPath) {
+function insertTemplate(placement, template, scopePath, showIfPath) {
 	const clone = template.cloneNode(true);
 
 	if(scopePath?.length > 0) clone.setAttribute("bop", scopePath.join("."));
@@ -409,8 +409,8 @@ function replaceTemplate(elem, template, scopePath, showIfPath) {
 	const isFragment = (clone.nodeType == Node.DOCUMENT_FRAGMENT_NODE);
 	const insertedElements = (isFragment ? Array.from(clone.children) : [ clone ]);
 
-	elem.parentNode.insertBefore(clone, elem);
-	elem.remove();
+	placement.parentNode.insertBefore(clone, placement);
+	placement.remove();
 
 	return insertedElements;
 }
@@ -568,7 +568,8 @@ function createProxyTree(elem, rootData) {
 				if(!templates.has(name)) throw new Error(`Unknown template name: ${name}`);
 
 				const template = templates.get(name);
-				const insertedElems = replaceTemplate(elem, template, scopePath, showIfPath);
+				const insertedElems = insertTemplate(elem, template, scopePath, showIfPath);
+
 				nodes.unshift(...insertedElems.map(elem => [ elem, tree, data, path ]));
 
 				continue;
