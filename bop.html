@@ -6,6 +6,8 @@
 <body>
     <div .basic id="basic-test"></div>
 
+    <div :scope=".basic" id="basic-attr-test"></div>
+
     <div id="primitive-test"></div>
 
     <div id="basic-nested-test">
@@ -300,6 +302,19 @@ runTest(
         { selector: "..", expected: "hello" },
 
         (proxy) => proxy({}),
+        { selector: "..", expected: "" },
+    ]
+);
+runTest(
+    "#basic-attr-test",
+    { basic: "bye" },
+    [
+        { selector: "..", expected: "bye" },
+
+        (proxy) => proxy.basic = "later",
+        { selector: "..", expected: "later" },
+
+        (proxy) => proxy(null),
         { selector: "..", expected: "" },
     ]
 );
