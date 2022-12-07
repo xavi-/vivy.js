@@ -415,6 +415,19 @@ function insertTemplate(placement, template, scopePath, showIfPath) {
 	return insertedElements;
 }
 
+const templateUsageCount = new Map();
+function throwOnExcessiveTemplateUsage(name) {
+	if(templateUsageCount.size == 0) setTimeout(() => templateUsageCount.clear(), 0);
+
+	const count = templateUsageCount.get(name) ?? 0;
+
+	if(count > 10_000) {
+		throw new Error(`Template "${name}" inserted >10_000 times (possible infinite loop)`);
+	}
+
+	templateUsageCount.set(name, count + 1);
+}
+
 function createProxyTree(elem, rootData) {
 	if(!elem) throw new Error("Null element passed in");
 
@@ -566,6 +579,7 @@ function createProxyTree(elem, rootData) {
 			if(elem.tagName.startsWith("T:") || elem.tagName.startsWith("TEMPLATE:")) {
 				const name = elem.tagName.split(":")[1].toLowerCase();
 				if(!templates.has(name)) throw new Error(`Unknown template name: ${name}`);
+				throwOnExcessiveTemplateUsage(name);
 
 				const template = templates.get(name);
 				const insertedElems = insertTemplate(elem, template, scopePath, showIfPath);
