@@ -354,10 +354,70 @@ function createArraySubtrees(elem, subtree, array, path, suffix) {
 	return rtn;
 }
 
+function findTemplates(elemRoot) {
+	const rtn = new Map();
+	const elems = [ elemRoot ];
+
+	let elem;
+	while((elem = elems.pop())) {
+		if(elem.tagName == "BOP:TEMPLATE") {
+			const name = elem.getAttribute("name");
+
+			if(!name) throw new Error(`Template missing name attribute: ${elem}`);
+			if(rtn.has(name)) throw new Error(`Duplicate template name found: ${name}`);
+
+			const fragment = document.createRange().createContextualFragment(elem.innerHTML);
+			elem.remove();
+
+			rtn.set(name, fragment);
+			continue;
+		}
+
+		const attr = elem.attributes[":template"];
+		if(attr) {
+			const name = attr.value.toLowerCase();
+
+			if(rtn.has(name)) throw new Error(`Duplicate template name found: ${name}`);
+
+			const cloned = elem.cloneNode(true);
+			cloned.removeAttribute(":template");
+			cloned.removeAttribute("bop");
+			for(const attr of cloned.attributes) {
+				const name = attr.name;
+				if ((name.charAt(0) == "." || name.charAt(0) == "$") && name.at(-1) != "?") {
+					cloned.removeAttribute(name);
+				}
+			}
+			rtn.set(name, cloned);
+		}
+
+		elems.push(...elem.children);
+	}
+
+	return rtn;
+}
+
+function replaceTemplate(elem, template, scopePath, showIfPath) {
+	const clone = template.cloneNode(true);
+
+	if(scopePath?.length > 0) clone.setAttribute("bop", scopePath.join("."));
+	if(showIfPath != null) {
+		const { negate, path } = showIfPath;
+		clone.attributes[":show-if"] = (negate ? "!": "") + path.join(".");
+	}
+
+	elem.parentNode.insertBefore(clone, elem);
+	elem.remove();
+
+	return clone;
+}
+
 function createProxyTree(elem, rootData) {
 	if(!elem) throw new Error("Null element passed in");
 
 	let treeRoot = null;
+
+	const templates = findTemplates(elem);
 
 	const createProxy = (path, initValue) => {
 		const _updateDom = (node, value) => updateDom(node, value, path, hydrate);
@@ -436,7 +496,8 @@ function createProxyTree(elem, rootData) {
 	const createEventHandler = (elem, handlerPath, contextPath) => {
 		return (event) => {
 			const handler = getValue(rootData, handlerPath);
-			const context = getNode(treeRoot, contextPath).proxy;
+			let context = getNode(treeRoot, contextPath).proxy
+			context ??= getNode(treeRoot, contextPath.slice(0, -1)).proxy;
 
 			if(handler instanceof Function) {
 				handler.call(elem, event, context);
@@ -498,6 +559,20 @@ function createProxyTree(elem, rootData) {
 			const {
 				scopePath, assignToPath, showIfPath, attrPaths, eventPaths
 			} = parseAttributesToPaths(elem);
+
+			if(elem.tagName.startsWith("T:") || elem.tagName.startsWith("TEMPLATE:")) {
+				const name = elem.tagName.split(":")[1].toLowerCase();
+				if(!templates.has(name)) throw new Error(`Unknown template name: ${name}`);
+
+				const template = templates.get(name);
+				const replacement = replaceTemplate(elem, template, scopePath, showIfPath);
+
+				const isFragment = (replacement.nodeType == Node.DOCUMENT_FRAGMENT_NODE);
+				const elems = (isFragment ? Array.from(replacement.children) : [ replacement ]);
+				for(const elem of elems) nodes.unshift([ elem, tree, data, path ]);
+
+				continue;
+			}
 
 			const scopeTraversal = scopePath && traverseToPath(root, tree, data, path, scopePath);
 
