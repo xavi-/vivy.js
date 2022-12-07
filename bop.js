@@ -406,10 +406,13 @@ function replaceTemplate(elem, template, scopePath, showIfPath) {
 		clone.attributes[":show-if"] = (negate ? "!": "") + path.join(".");
 	}
 
+	const isFragment = (clone.nodeType == Node.DOCUMENT_FRAGMENT_NODE);
+	const insertedElements = (isFragment ? Array.from(clone.children) : [ clone ]);
+
 	elem.parentNode.insertBefore(clone, elem);
 	elem.remove();
 
-	return clone;
+	return insertedElements;
 }
 
 function createProxyTree(elem, rootData) {
@@ -565,11 +568,8 @@ function createProxyTree(elem, rootData) {
 				if(!templates.has(name)) throw new Error(`Unknown template name: ${name}`);
 
 				const template = templates.get(name);
-				const replacement = replaceTemplate(elem, template, scopePath, showIfPath);
-
-				const isFragment = (replacement.nodeType == Node.DOCUMENT_FRAGMENT_NODE);
-				const elems = (isFragment ? Array.from(replacement.children) : [ replacement ]);
-				for(const elem of elems) nodes.unshift([ elem, tree, data, path ]);
+				const insertedElems = replaceTemplate(elem, template, scopePath, showIfPath);
+				nodes.unshift(...insertedElems.map(elem => [ elem, tree, data, path ]));
 
 				continue;
 			}

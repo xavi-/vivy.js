@@ -147,6 +147,39 @@
         </ul>
     </div>
 
+    <div id="template-basic">
+        <div class="original">
+            <p :template="original">
+                original <span .text></span>
+            </p>
+            <t:original></t:original>
+        </div>
+
+        <div class="nested">
+            <p :template="nested">
+                <span>nested</span>
+                <t:disappearing></t:disappearing>
+            </p>
+            <t:nested></t:nested>
+
+            <bop:template name="disappearing">
+                hi <span .text></span>
+            </bop:template>
+        </div>
+    </div>
+
+    <div id="template-complex">
+        <ul>
+            <li :template="tree">
+                <span .name @dblclick="$.addChild"></span>
+                <ul .children.length?>
+                    <t:tree .children[]></t:tree>
+                    <li><button @click="$.addChild">+</button></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
     <div id="playground">
         <t:title></t:title>
         <ul>
@@ -184,16 +217,17 @@ function compareArrays(context, actual, expected) {
         throw new Error(`${context} -- Expected ${expected.length}, found ${actual?.length} items`);
 
     for(const [ idx, result ] of actual.entries()) {
-        if(result === expected[idx]) continue;
+        if(compareValue(context, result, expected[idx])) continue;
 
         throw new Error(`${context} -- "${expected[idx]}" != "${result}"`);
     }
 }
 
 function compareValue(context, actual, expected) {
-    if(actual === expected) return;
-    if(expected instanceof Date && actual?.toString() == expected.toString()) return;
-    if(expected == null && actual == null) return;
+    if(actual === expected) return true;
+    if(typeof expected === 'string' && actual?.trim() == expected) return true;
+    if(expected instanceof Date && actual?.toString() == expected.toString()) return true;
+    if(expected == null && actual == null) return true;
 
     throw new Error(`${context} -- "${expected}" != "${actual}"`);
 }
@@ -811,6 +845,49 @@ runTest(
             proxy.base = "??";
         },
         { selectAll: ".base", expected: [ "??", "??", "??" ] },
+    ]
+);
+runTest(
+    "#template-basic",
+    { text: "text" },
+    [
+        { selectAll: ".original p", expected: [ "original text", "original text" ] },
+        { selectAll: ".nested p span", expected: [ "nested", "text", "nested", "text" ] },
+
+        (proxy) => proxy.text = "text too",
+        { selectAll: ".original p", expected: [ "original text too", "original text too" ] },
+        { selectAll: ".nested p span", expected: [ "nested", "text too", "nested", "text too" ] },
+    ]
+);
+runTest(
+    "#template-complex",
+    {
+        name: "root",
+        children: [],
+        addChild: (event, node) => node.children.push({
+            name: `child${node.children.length + 1}`, children: []
+        })
+    },
+    [
+        { selectAll: "li", expected: [ "root" ] },
+        { selectAll: "li li", expected: [] },
+
+        (_, elem) => elem.querySelector("span").dispatchEvent(new Event("dblclick")),
+        { selectAll: "li li span", expected: [ "child1" ] },
+        { path: "children.0.name", expected: "child1" },
+
+        (_, elem) => elem.querySelector("button").dispatchEvent(new Event("click")),
+        { selectAll: "li li span", expected: [ "child1", "child2" ] },
+        { path: "children.0.name", expected: "child1" },
+        { path: "children.1.name", expected: "child2" },
+
+        (_, elem) => elem.querySelector("li li span").dispatchEvent(new Event("dblclick")),
+        { selectAll: "li li li span", expected: [ "child1" ] },
+        { selectAll: "li li:nth-child(1) li span", expected: [ "child1" ] },
+        { selectAll: "li li:nth-child(2) span", expected: [ "child2" ] },
+        { path: "children.0.name", expected: "child1" },
+        { path: "children.0.children.0.name", expected: "child1" },
+        { path: "children.1.name", expected: "child2" },
     ]
 );
 //*/
