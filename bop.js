@@ -198,11 +198,11 @@ function parseAttributesToPaths(elem) {
 		const name = attr.name, value = attr.value;
 
 		if ((
-			name == "bop" || name.charAt(0) == "." ||
+			name == ":scope" || name.charAt(0) == "." ||
 			(name.charAt(0) == "$" && name.charAt(1) == ".")
 		) && name.at(-1) != "?") {
 			if (scopePath) console.warn(`Multiple scope paths found on element: ${attr}`, elem);
-			else scopePath = toParts(name == "bop" ? value : name);
+			else scopePath = toParts(name == ":scope" ? value : name);
 		} else if(name.charAt(0) == "@") {
 			eventPaths.push({ event: name.substr(1), path: toParts(value) });
 		} else if(name.charAt(0) == "!" || name.at(-1) == "?") {
@@ -328,7 +328,7 @@ function createArraySubtrees(elem, subtree, array, path, suffix) {
 
 	const pathAttr = [ ...elem.attributes ].find(attr => attr.name.charAt(0) == ".");
 	if(pathAttr) elem.removeAttribute(pathAttr.name);
-	elem.setAttribute("bop", suffix.join("."));
+	elem.setAttribute(":scope", suffix.join("."));
 
 	subtree.elements = null;
 	subtree.templates ??= [];
@@ -381,7 +381,7 @@ function findTemplates(elemRoot) {
 
 			const cloned = elem.cloneNode(true);
 			cloned.removeAttribute(":template");
-			cloned.removeAttribute("bop");
+			cloned.removeAttribute(":scope");
 			for(const attr of cloned.attributes) {
 				const name = attr.name;
 				if ((name.charAt(0) == "." || name.charAt(0) == "$") && name.at(-1) != "?") {
@@ -400,7 +400,7 @@ function findTemplates(elemRoot) {
 function insertTemplate(placement, template, scopePath, showIfPath) {
 	const clone = template.cloneNode(true);
 
-	if(scopePath?.length > 0) clone.setAttribute("bop", scopePath.join("."));
+	if(scopePath?.length > 0) clone.setAttribute(":scope", scopePath.join("."));
 	if(showIfPath != null) {
 		const { negate, path } = showIfPath;
 		clone.attributes[":show-if"] = (negate ? "!": "") + path.join(".");
