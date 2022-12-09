@@ -194,32 +194,24 @@
     </div>
 
     <div id="playground">
-        <t:title></t:title>
-        <ul>
-            <li :template="tree" .tree>
-                <span .name @dblclick="$.tree.addChild"></span>
-                <ul .children.length?>
-                    <t:tree .children[]></t:tree>
-                    <li @click="$.tree.addChild">+</li>
-                </ul>
-            </li>
-        </ul>
-        <bop:template name="title">
-            <h1>This is a title</h1>
-            <h2>This is a subtitle</h2>
-        </bop:template>
+        <table .table>
+            <tr .rows[]>
+                <td .[]>
+                    <input :assign-to="." type="number" />
+                </td>
+            </tr>
+        </table>
     </div>
 <script type="module" src="./bop.js"></script>
 <script type="module">
 import { bop } from "./bop.js"
 
 const playground = {
-    tree: {
-        name: "root",
-        children: [],
-        addChild: (event, node) => node.children.push({
-            name: `child${node.children.length + 1}`, children: []
-        })
+    table: {
+        rows: [
+            [ 1, 2, 3, 4 ],
+            [ 5, 6, 7, 8 ]
+        ],
     }
 };
 const root = document.querySelector("#playground");

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div id="playground">
+    <table .table>
+        <tr .rows[]>
+            <td .[]>
+                <input :assign-to="." type="number" />
+            </td>
+        </tr>
+    </table>
+</div>
+<script type="module" src="./bop.js"></script>
+<script type="module">
+import { bop } from "./bop.js"
+
+const playground = {
+    table: {
+        rows: [
+            [ 1, 2, 3, 4 ],
+            [ 5, 6, 7, 8 ]
+        ],
+    }
+};
+const root = document.querySelector("#playground");
+window.proxy = bop(root, playground);
+
+</script>
+</body>
+</html>
