@@ -57,6 +57,7 @@
     <div id="input-basic">
         <input .input id="input">
         <input name="named" id="named">
+        <input id="value" value.=".value">
         <textarea :assign-to=".assigned" name="not-used" id="assigned"></textarea>
     </div>
 
@@ -466,11 +467,13 @@ runTest(
     {
         input: "hi",
         named: "hey",
+        value: "howdy",
         assigned: "hello",
     },
     [
         { valueFrom: "#input", expected: "hi" },
         { valueFrom: "#named", expected: "hey" },
+        { valueFrom: "#value", expected: "howdy" },
         { valueFrom: "#assigned", expected: "hello" },
 
         (proxy) => proxy.input = "ok",
@@ -478,6 +481,9 @@ runTest(
 
         (proxy) => proxy.named = "ok",
         { valueFrom: "#named", expected: "ok" },
+
+        (proxy) => proxy.value = "ok",
+        { valueFrom: "#value", expected: "ok" },
 
         (proxy) => proxy.assigned = "ok",
         { valueFrom: "#assigned", expected: "ok" },
@@ -495,6 +501,13 @@ runTest(
             named.dispatchEvent(new Event("change"))
         },
         { path: "named", expected: "poop" },
+
+        (_, elem) => {
+            const value = elem.querySelector("#value");
+            value.value = "poop";
+            value.dispatchEvent(new Event("change"))
+        },
+        { path: "value", expected: "poop" },
 
         (_, elem) => {
             const assigned = elem.querySelector("#assigned");

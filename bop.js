@@ -222,6 +222,13 @@ function parseAttributesToPaths(elem) {
 		if(attrs[":assign-to"]?.value) { assignToPath = toParts(attrs[":assign-to"].value); }
 		else if(scopePath != null) { assignToPath = scopePath; scopePath = null; }
 		else if(attrs["name"]?.value) { assignToPath = toParts(attrs["name"].value); }
+		else {
+			const attrIdx = attrPaths.findIndex(a => a.attribute == "value");
+			if(attrIdx > -1) {
+				assignToPath = attrPaths[attrIdx].path;
+				attrPaths.splice(attrIdx, 1);
+			}
+		}
 	}
 
 	if(attrs[":show-if"]?.value) {
