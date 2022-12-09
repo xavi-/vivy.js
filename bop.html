@@ -61,6 +61,16 @@
         <textarea :assign-to=".assigned" name="not-used" id="assigned"></textarea>
     </div>
 
+    <div id="input-complex">
+        <table>
+            <tr .[]>
+                <td .[]>
+                    <input :assign-to="." type="number" />
+                </td>
+            </tr>
+        </table>
+    </div>
+
     <div id="input-radio">
         <label><input name="result" type="radio" value="fab"> fab</label>
         <label><input name="result" type="radio" value="rab"> rab</label>
@@ -515,6 +525,27 @@ runTest(
             assigned.dispatchEvent(new Event("change"))
         },
         { path: "assigned", expected: "poop" },
+    ]
+);
+runTest(
+    "#input-complex",
+    [
+        [ 1, 2, 3, 4 ],
+        [ 5, 6, 7, 8 ]
+    ],
+    [
+        { selectAll: "input", expected: [ "", "", "", "", "", "", "", "" ] },
+        { valueFrom: "td:nth-child(2) > input", expected: 2 },
+
+        (proxy) => proxy[0][1] = 12,
+        { valueFrom: "td:nth-child(2) > input", expected: 12 },
+
+        (_, elem) => {
+            const input = elem.querySelector("td:nth-child(2) > input");
+            input.value = 182;
+            input.dispatchEvent(new Event("change"))
+        },
+        { path: ".0.1", expected: 182 },
     ]
 );
 runTest(

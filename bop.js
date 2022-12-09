@@ -73,23 +73,28 @@ function applyValueToDom(tree, data) {
 		}
 
 		if(elem.scope) {
-			const { element } = elem;
+			const { element, hydrating, scope } = elem;
 
-			if(isPrimitive) {
+			if(data == null) {
+				if(tree.children.size > 0)
+					console.warn(`Hydration failure: null found at $.${scope.join(".")}`, element);
+
+				if(element.children.length <= 0) element.textContent = "";
+			} else if(isPrimitive) {
 				const childCount = element.children.length;
-				if(childCount > 0) {
-					console.warn(`Value "${data}" overrides ${childCount} child elements`);
+				if(childCount === 0) { element.textContent = `${data}`; }
+				else if(tree.children.size > 0) { // Edge case: object val replaced with primitive
+					console.warn(`Expected object at $.${scope.join(".")}: ` +
+						`found "${data}" which overrides ${childCount} child elements`, element
+					);
 					if(!tree.originalChildElements) {
 						tree.originalChildElements = Array.from(element.children);
 					}
+
+					element.textContent = `${data}`;
+				} else if(tree.elements.length <= 1 && !hydrating) {
+					console.warn(`Value "${data}" from $.${scope.join(".")} is unused`);
 				}
-
-				element.textContent = `${data}`;
-			} else if(data == null) {
-				if(tree.children.size > 0)
-					console.warn("Can't populate elements because null found", element)
-
-				if(element.children.length <= 0) element.textContent = "";
 			} else if(tree.originalChildElements && element.children.length <= 0) {
 				element.textContent = "";
 
@@ -525,7 +530,8 @@ function createProxyTree(elem, rootData) {
 			if(handler instanceof Function) {
 				handler.call(elem, event, context);
 			} else {
-				console.warn(`Non-function found`, handlerPath, elem);
+				const path = handlerPath.join(".");
+				console.warn(`Non-function event-handler: "${handler}" found at $.${path}`, elem);
 			}
 		};
 	};
@@ -565,7 +571,7 @@ function createProxyTree(elem, rootData) {
 
 	const hydrate = (elements, data, path, startRoot) => {
 		const hydrateRoot = startRoot ?? {
-			elements: elements.map(element => ({ element, scope: true })),
+			elements: elements.map(element => ({ element, scope: path })),
 			proxy: null,
 			children: new Map()
 		};
@@ -696,8 +702,11 @@ function createProxyTree(elem, rootData) {
 						console.warn("Object never used?", elem, traversed);
 					}
 
-					subtree.elements.push({ element: elem, scope: true });
+					const element = { element: elem, scope: traversed, hydrating: true };
+					subtree.elements.push(element);
+
 					applyValueToDom(subtree, subData);
+					element.hydrating = false;;
 				}
 			}
 		}
