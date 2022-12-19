@@ -198,6 +198,22 @@
     </div>
 <script src="./bop.js"></script>
 <script>
+(function jsonTest() {
+    const tests = [
+        { obj: null, json: "null" },
+        { obj: 1, json: "1" },
+        { obj: { a: [ 1, 2, 3, 4 ] }, json: `{"a":[1,2,3,4]}` },
+        { obj: [ { a: 1 }, { a: 2 } ], json: `[{"a":1},{"a":2}]` },
+        { obj: { toJSON: () => ({ a: 3 }), b: 4 }, json: `{"a":3}` },
+    ]
+    for(const { obj, json } of tests) {
+        const actual = JSON.stringify(bop(document.createElement("div"), obj));
+        if(json != actual) {
+            throw new Error(`JSON.stringify broken -- expected: '${json}', actual: '${actual}'`);
+        }
+    }
+})();
+
 function compareArrays(context, actual, expected) {
     if(expected.length !== actual?.length)
         throw new Error(`${context} -- Expected ${expected.length}, found ${actual?.length} items`);

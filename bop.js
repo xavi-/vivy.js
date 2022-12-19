@@ -473,6 +473,8 @@ function createProxyTree(elem, rootData) {
 				const value = getValue(rootData, path);
 				if(value == null) console.warn(`Read property of ${value} (reading '${prop}')`);
 
+				if(prop == "toJSON") return value?.toJSON ?? (() => value);
+
 				return getNode(treeRoot, [ ...path, prop ])?.proxy ?? value?.[prop];
 			},
 			set(_, prop, value) {
