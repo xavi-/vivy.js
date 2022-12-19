@@ -1,3 +1,4 @@
+const bop = (() => {
 function applyValueToDom(tree, data) {
 	const isPrimitive = data != null && typeof data !== "object" && typeof data !== "function";
 
@@ -725,4 +726,5 @@ function createProxyTree(elem, rootData) {
 	return treeRoot;
 }
 
-export function bop(elem, data) { return createProxyTree(elem, data).proxy; }
+return function bop(elem, data) { return createProxyTree(elem, data).proxy; }
+})();
