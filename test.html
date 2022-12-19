@@ -193,29 +193,9 @@
         </ul>
     </div>
 
-    <div id="playground">
-        <table .table>
-            <tr .rows[]>
-                <td .[]>
-                    <input :assign-to="." type="number" />
-                </td>
-            </tr>
-        </table>
     </div>
 <script src="./bop.js"></script>
 <script>
-
-const playground = {
-    table: {
-        rows: [
-            [ 1, 2, 3, 4 ],
-            [ 5, 6, 7, 8 ]
-        ],
-    }
-};
-const root = document.querySelector("#playground");
-window.proxy = bop(root, playground);
-
 function compareArrays(context, actual, expected) {
     if(expected.length !== actual?.length)
         throw new Error(`${context} -- Expected ${expected.length}, found ${actual?.length} items`);
