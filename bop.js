@@ -635,10 +635,10 @@ function createProxyTree(elem, rootData) {
 				const params = {
 					negated, placement, hydrate: () => {
 						if(isHydrated) return;
+						isHydrated = true;
 
 						// Ignore scopeTraversal to ensure arrays are handled correctly
 						hydrate([ elem ], data, path, tree);
-						isHydrated = true;
 					},
 				};
 				subtree.elements.push({ element: elem, showIf: params });

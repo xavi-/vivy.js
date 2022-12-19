@@ -193,6 +193,8 @@
         </ul>
     </div>
 
+    <div id="show-if-bug">
+        <div .prop_a.prop_b?><span .prop_a.prop_b></span></div>
     </div>
 <script src="./bop.js"></script>
 <script>
@@ -918,6 +920,16 @@ runTest(
         { path: "children.0.name", expected: "child1" },
         { path: "children.0.children.0.name", expected: "child1" },
         { path: "children.1.name", expected: "child2" },
+    ]
+);
+runTest(
+    "#show-if-bug",
+    { prop_a: null },
+    [
+        { selector: "div span", expected: null },
+
+        (proxy) => proxy.prop_a = { prop_b: "hello" },
+        { selector: "div span", expected: "hello" },
     ]
 );
 //*/
