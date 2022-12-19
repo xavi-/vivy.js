@@ -333,7 +333,7 @@ function createSyncer(root, path, elem) {
 }
 
 function createArraySubtrees(elem, subtree, array, path, suffix) {
-	if(!Array.isArray(array)) console.warn(`Property type mismatch:`, elem, array);
+	if(!Array.isArray(array)) console.warn(`Non-array found at $.${path.join(".")}:`, array, elem);
 
 	const comment = document.createComment("bop:[]");
 	const placement = elem.parentNode.insertBefore(comment, elem);
@@ -564,6 +564,17 @@ function createProxyTree(elem, rootData) {
 
 			subtree = subtree.children.get(part);
 			traversed = [ ...traversed, part ];
+
+			if(subData && !(part in subData)) {
+				const nearMiss = Object.keys(subData).find(key => key.toLowerCase() == part);
+				if(nearMiss != null) {
+console.warn(`!!!
+Near miss found -- "${part}" (html attribute) vs "${nearMiss}" (data property)
+HTML attributes are always lowercased by the browser so mixed-case scope references aren't possible.
+Consider using :scope="${traversal.join(".")}" instead
+!!!`);
+				}
+			}
 			subData = subData?.[part];
 			idx += 1;
 		}
