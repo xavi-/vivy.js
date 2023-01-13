@@ -1,4 +1,4 @@
-const bop = (() => {
+const vivy = (() => {
 function applyValueToDom(tree, data) {
 	const isPrimitive = data != null && typeof data !== "object" && typeof data !== "function";
 
@@ -335,7 +335,7 @@ function createSyncer(root, path, elem) {
 function createArraySubtrees(elem, subtree, array, path, suffix) {
 	if(!Array.isArray(array)) console.warn(`Non-array found at $.${path.join(".")}:`, array, elem);
 
-	const comment = document.createComment("bop:[]");
+	const comment = document.createComment("vivy:[]");
 	const placement = elem.parentNode.insertBefore(comment, elem);
 	elem.remove();
 
@@ -373,7 +373,7 @@ function findTemplates(elemRoot) {
 
 	let elem;
 	while((elem = elems.pop())) {
-		if(elem.tagName == "BOP:TEMPLATE") {
+		if(elem.tagName == "VIVY:TEMPLATE") {
 			const name = elem.getAttribute("name");
 
 			if(!name) throw new Error(`Template missing name attribute: ${elem}`);
@@ -638,7 +638,7 @@ Consider using :scope="${traversal.join(".")}" instead
 
 				if(untraversed.length !== 0) throw new Error(`Can't show-if an array, ${elem}`);
 
-				const comment = document.createComment("bop:show-if");
+				const comment = document.createComment("vivy:show-if");
 				const negated = showIfPath.negated;
 				const placement = elem.parentNode.insertBefore(comment, elem);
 
@@ -739,5 +739,6 @@ Consider using :scope="${traversal.join(".")}" instead
 	return treeRoot;
 }
 
-return function bop(elem, data) { return createProxyTree(elem, data).proxy; }
+return function vivy(elem, data) { return createProxyTree(elem, data).proxy; }
 })();
+const vivify = vivy;

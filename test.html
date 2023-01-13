@@ -175,9 +175,9 @@
             </p>
             <t:nested></t:nested>
 
-            <bop:template name="disappearing">
+            <vivy:template name="disappearing">
                 hi <span .text></span>
-            </bop:template>
+            </vivy:template>
         </div>
     </div>
 
@@ -196,7 +196,7 @@
     <div id="show-if-bug">
         <div .prop_a.prop_b?><span .prop_a.prop_b></span></div>
     </div>
-<script src="./bop.js"></script>
+<script src="./vivy.js"></script>
 <script>
 (function jsonTest() {
     const tests = [
@@ -207,7 +207,7 @@
         { obj: { toJSON: () => ({ a: 3 }), b: 4 }, json: `{"a":3}` },
     ]
     for(const { obj, json } of tests) {
-        const actual = JSON.stringify(bop(document.createElement("div"), obj));
+        const actual = JSON.stringify(vivify(document.createElement("div"), obj));
         if(json != actual) {
             throw new Error(`JSON.stringify broken -- expected: '${json}', actual: '${actual}'`);
         }
@@ -236,7 +236,7 @@ function compareValue(context, actual, expected) {
 
 async function runTest(selector, data, asserts) {
     const elem = document.querySelector(selector);
-    const proxy = bop(elem, data);
+    const proxy = vivy(elem, data);
 
     for(const [aIdx, assert] of asserts.entries()) {
         if(typeof assert === "function") {
