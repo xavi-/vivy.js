@@ -481,20 +481,23 @@ function createProxyTree(elem, rootData) {
 				const parent = getValue(rootData, path);
 				if(parent == null)
 					throw new Error(`Cannot set properties of ${value} (reading '${prop}')`);
+				if(Object.is(parent[prop], value)) return true;
 
 				const node = getNode(treeRoot, path);
-				const isArray = !!node.templates;
+				if(value && node.children.get(prop)?.proxy === value) return true;
 
-				const prevLength = (isArray ? parent.length : -1);
+				const prevLength = parent.length;
 				parent[prop] = value;
 
-				if(isArray && parent.length != prevLength) {
+				if(node.templates && parent.length !== prevLength) {
 					adjustArrayTree(node, parent, path, hydrate);
 					if(node.children.has("length")) {
 						_updateDom(node.children.get("length"), parent.length);
 					}
 				} else if(node.children.has(prop)) {
 					_updateDom(node.children.get(prop), value);
+				} else if(parent.length !== prevLength && node.children.has("length")) {
+					_updateDom(node.children.get("length"), value)
 				}
 
 				// Here to update element's attributes

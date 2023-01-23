@@ -214,6 +214,23 @@
     }
 })();
 
+(function sameValueTest() {
+    const div = document.createElement("div");
+    div.innerHTML = `<span .text class.="$.attr"></span><span .vals[]></span>`;
+
+    const data = vivify(div, { text: "hello", attr: "okay", vals: [ 1, 2, 3 ] });
+
+    const observer = new MutationObserver((mutations) => {
+        throw new Error("Identical values should not mutate DOM");
+    });
+    observer.observe(div, { childList: true, attributes: true, subtree: true });
+
+    data.text = "hello";
+    data.attr = "okay";
+    data.vals = data.vals;
+    data.vals[0] = 1;
+})();
+
 function compareArrays(context, actual, expected) {
     if(expected.length !== actual?.length)
         throw new Error(`${context} -- Expected ${expected.length}, found ${actual?.length} items`);
