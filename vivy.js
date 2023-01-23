@@ -298,11 +298,12 @@ function createSyncer(root, path, elem) {
 		return event => syncer(event.target.files);
 	}
 
-	// checkboxes and multi-selects are special
+	// text, email, password, etc... inputs
 	if(elem.type != "checkbox" && !elem.multiple) {
 		return event => syncer(event.target.value);
 	}
 
+	// checkboxes and multi-selects are special
 	if(elem.multiple) {
 		return event => {
 			const val = [];
