@@ -2,235 +2,9 @@
 <html>
 <head>
     <meta charset="UTF-8">
-</head>
-<body>
-    <div .basic id="basic-test"></div>
 
-    <div :scope=".basic" id="basic-attr-test"></div>
-
-    <div id="primitive-test"></div>
-
-    <div id="basic-nested-test">
-        <section .section>
-            <h2 .title></h2>
-            <div id="independent">not affected</div>
-            <div>
-                <p .paragraph></p>
-            </div>
-        </section>
-        <div .deep.example1 id="deep1"></div>
-        <div .deep.example2 id="example2"><span .deeper id="deep2"></span></div>
-    </div>
-
-    <div id="duplicates">
-        <div .a id="ref3"><div .b><div .c id="ref1"></div></div></div>
-        <div .a.b.c id="ref2"></div>
-    </div>
-
-    <div id="basic-array">
-        <ol>
-            <li .grocery_list[]></li>
-        </ol>
-    </div>
-
-    <div id="nested-array">
-        <li .grid[][]></li>
-    </div>
-
-    <div id="nested-object-array">
-        <ol>
-            <li .classes[].students[]></li>
-        </ol>
-    </div>
-
-    <div id="complex-array">
-        <div .first class="first">
-            <ol>
-                <li .[]><span .text></span></li>
-            <ol>
-            <div>Length: <strong .length></strong></div>
-        </div>
-        <p .second.0></p>
-        <p .second.2></p>
-    </div>
-
-    <div id="input-basic">
-        <input .input id="input">
-        <input name="named" id="named">
-        <input id="value" value.=".value">
-        <textarea :assign-to=".assigned" name="not-used" id="assigned"></textarea>
-    </div>
-
-    <div id="input-complex">
-        <table>
-            <tr .[]>
-                <td .[]>
-                    <input :assign-to="." type="number" />
-                </td>
-            </tr>
-        </table>
-    </div>
-
-    <div id="input-radio">
-        <label><input name="result" type="radio" value="fab"> fab</label>
-        <label><input name="result" type="radio" value="rab"> rab</label>
-        <label><input name="result" type="radio" value="bab"> bab</label>
-    </div>
-
-    <div id="input-checkbox">
-        <label><input name="groupA" type="checkbox" value="woo"> woo</label>
-        <label><input name="groupA" type="checkbox" value="poo"> poo</label>
-        <label><input name="groupA" type="checkbox" value="chew"> chew</label>
-
-        <label><input name="individualA" type="checkbox"> shew</label>
-        <label><input name="individualB" type="checkbox" value="doo"> moo</label>
-    </div>
-
-    <div id="input-select">
-        <select name="value">
-            <option .options[] />
-        </select>
-    </div>
-
-    <div id="input-multiselect">
-        <select :assign-to="values" multiple>
-            <option .options[] />
-        </select>
-    </div>
-
-    <div id="input-non-string">
-        <input name="color" type="color">
-        <input name="number" type="number">
-        <input name="date" type="date">
-    </div>
-
-    <div id="input-root-value">
-        <select . multiple>
-            <option>a</option>
-            <option>b</option>
-            <option>c</option>
-        </select>
-    </div>
-
-    <div id="attributes">
-        <div id="attr" attr.=".attr" normal="okay"></div>
-        <div id="num" num.=".number"></div>
-        <div id="bool" bool.=".boolean"></div>
-        <div id="is-null" is-null.=".is_nullish"></div>
-        <div id="class" class.=".is_array"></div>
-        <div id="style" style.=".is_object"></div>
-    </div>
-
-    <button id="events" @click=".clicker" @mouseup=".upper" @mousemove=".mover">button</button>
-
-    <div id="show-hide">
-        <div id="show" :show-if=".show?">showing</div>
-        <div id="neg-show" :show-if="!.show?">showing</div>
-
-        <div id="inline-show" .show?>showing</div>
-        <div id="inline-neg-show" !.show?>showing</div>
-
-        <ul .arr.length?>
-            <li .arr[]></li>
-        </ul>
-
-        <strong .!falsy?>all falsy?</strong>
-    </div>
-
-    <div id="root-reference">
-        <div .obj>
-            <em .text></em>
-            <strong .$.text></strong>
-            <span $.text></span>
-            <button id="inner" @click="$.randomText">inner context</button>
-
-            <input id="input1" $.input1>
-            <input id="input2" :assign-to="$.input2">
-            <div id="root-show" $.opt.show? class.="$.opt.classes">hello</div>
-        </div>
-        <button id="outer" @click=".randomText">outer context</button>
-    </div>
-
-    <div id="root-reference-arrays">
-        <ul .lists[]>
-            <li .[]>
-                <span .text></span> <button @click="$.change">add</button>
-            </li>
-            <li $.base class="base"></li>
-        </ul>
-    </div>
-
-    <div id="template-basic">
-        <div class="original">
-            <p :template="original">
-                original <span .text></span>
-            </p>
-            <t:original></t:original>
-        </div>
-
-        <div class="nested">
-            <p :template="nested">
-                <span>nested</span>
-                <t:disappearing></t:disappearing>
-            </p>
-            <t:nested></t:nested>
-
-            <vivy:template name="disappearing">
-                hi <span .text></span>
-            </vivy:template>
-        </div>
-    </div>
-
-    <div id="template-complex">
-        <ul>
-            <li :template="tree">
-                <span .name @dblclick="$.addChild"></span>
-                <ul .children.length?>
-                    <t:tree .children[]></t:tree>
-                    <li><button @click="$.addChild">+</button></li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-
-    <div id="show-if-bug">
-        <div .prop_a.prop_b?><span .prop_a.prop_b></span></div>
-    </div>
 <script src="./vivy.js"></script>
 <script>
-(function jsonTest() {
-    const tests = [
-        { obj: null, json: "null" },
-        { obj: 1, json: "1" },
-        { obj: { a: [ 1, 2, 3, 4 ] }, json: `{"a":[1,2,3,4]}` },
-        { obj: [ { a: 1 }, { a: 2 } ], json: `[{"a":1},{"a":2}]` },
-        { obj: { toJSON: () => ({ a: 3 }), b: 4 }, json: `{"a":3}` },
-    ]
-    for(const { obj, json } of tests) {
-        const actual = JSON.stringify(vivify(document.createElement("div"), obj));
-        if(json != actual) {
-            throw new Error(`JSON.stringify broken -- expected: '${json}', actual: '${actual}'`);
-        }
-    }
-})();
-
-(function sameValueTest() {
-    const div = document.createElement("div");
-    div.innerHTML = `<span .text class.="$.attr"></span><span .vals[]></span>`;
-
-    const data = vivify(div, { text: "hello", attr: "okay", vals: [ 1, 2, 3 ] });
-
-    const observer = new MutationObserver((mutations) => {
-        throw new Error("Identical values should not mutate DOM");
-    });
-    observer.observe(div, { childList: true, attributes: true, subtree: true });
-
-    data.text = "hello";
-    data.attr = "okay";
-    data.vals = data.vals;
-    data.vals[0] = 1;
-})();
-
 function compareArrays(context, actual, expected) {
     if(expected.length !== actual?.length)
         throw new Error(`${context} -- Expected ${expected.length}, found ${actual?.length} items`);
@@ -308,7 +82,12 @@ async function runTest(selector, data, asserts) {
         }
     }
 }
-//*
+</script>
+</head>
+<body>
+
+<div .basic id="basic-test"></div>
+<script>
 runTest(
     "#basic-test",
     { basic: "hi" },
@@ -322,6 +101,10 @@ runTest(
         { selector: "..", expected: "" },
     ]
 );
+</script>
+
+<div :scope=".basic" id="basic-attr-test"></div>
+<script>
 runTest(
     "#basic-attr-test",
     { basic: "bye" },
@@ -335,6 +118,10 @@ runTest(
         { selector: "..", expected: "" },
     ]
 );
+</script>
+
+<div id="primitive-test"></div>
+<script>
 runTest(
     "#primitive-test",
     "primitive",
@@ -345,6 +132,20 @@ runTest(
         { selector: "..", expected: "" },
     ]
 );
+</script>
+
+<div id="basic-nested-test">
+    <section .section>
+        <h2 .title></h2>
+        <div id="independent">not affected</div>
+        <div>
+            <p .paragraph></p>
+        </div>
+    </section>
+    <div .deep.example1 id="deep1"></div>
+    <div .deep.example2 id="example2"><span .deeper id="deep2"></span></div>
+</div>
+<script>
 runTest(
     "#basic-nested-test",
     {
@@ -385,6 +186,13 @@ runTest(
         { selector: "#deep2", expected: "back" },
     ]
 );
+</script>
+
+<div id="duplicates">
+    <div .a id="ref3"><div .b><div .c id="ref1"></div></div></div>
+    <div .a.b.c id="ref2"></div>
+</div>
+<script>
 runTest(
     "#duplicates",
     { a: { b: { c: "abc" } } },
@@ -411,6 +219,14 @@ runTest(
         { selector: "#ref3", expected: "" },
     ]
 );
+</script>
+
+<div id="basic-array">
+    <ol>
+        <li .grocery_list[]></li>
+    </ol>
+</div>
+<script>
 runTest(
     "#basic-array",
     { grocery_list: [ "a", "b", "c" ] },
@@ -424,6 +240,12 @@ runTest(
         { selectAll: "li", expected: [] },
     ]
 );
+</script>
+
+<div id="nested-array">
+    <li .grid[][]></li>
+</div>
+<script>
 runTest(
     "#nested-array",
     { grid: [ [ "blue", "green" ], [ "green", "blue" ] ] },
@@ -443,6 +265,14 @@ runTest(
         { selectAll: "li", expected: [] },
     ]
 );
+</script>
+
+<div id="nested-object-array">
+    <ol>
+        <li .classes[].students[]></li>
+    </ol>
+</div>
+<script>
 runTest(
     "#nested-object-array",
     { classes: [ { students: [ "alex", "blair" ] }, { students: [ "cory", "quinn" ] } ] },
@@ -456,6 +286,19 @@ runTest(
         { selectAll: "li", expected: [] },
     ]
 );
+</script>
+
+<div id="complex-array">
+    <div .first class="first">
+        <ol>
+            <li .[]><span .text></span></li>
+        <ol>
+        <div>Length: <strong .length></strong></div>
+    </div>
+    <p .second.0></p>
+    <p .second.2></p>
+</div>
+<script>
 runTest(
     "#complex-array",
     {
@@ -478,6 +321,15 @@ runTest(
         { selectAll: "p", expected: [ "", "" ] },
     ]
 );
+</script>
+
+<div id="input-basic">
+    <input .input id="input">
+    <input name="named" id="named">
+    <input id="value" value.=".value">
+    <textarea :assign-to=".assigned" name="not-used" id="assigned"></textarea>
+</div>
+<script>
 runTest(
     "#input-basic",
     {
@@ -533,6 +385,18 @@ runTest(
         { path: "assigned", expected: "poop" },
     ]
 );
+</script>
+
+<div id="input-complex">
+    <table>
+        <tr .[]>
+            <td .[]>
+                <input :assign-to="." type="number" />
+            </td>
+        </tr>
+    </table>
+</div>
+<script>
 runTest(
     "#input-complex",
     [
@@ -554,6 +418,14 @@ runTest(
         { path: ".0.1", expected: 182 },
     ]
 );
+</script>
+
+<div id="input-radio">
+    <label><input name="result" type="radio" value="fab"> fab</label>
+    <label><input name="result" type="radio" value="rab"> rab</label>
+    <label><input name="result" type="radio" value="bab"> bab</label>
+</div>
+<script>
 runTest(
     "#input-radio",
     { result: "rab" },
@@ -575,6 +447,17 @@ runTest(
         { path: "result", expected: "bab" },
     ]
 );
+</script>
+
+<div id="input-checkbox">
+    <label><input name="groupA" type="checkbox" value="woo"> woo</label>
+    <label><input name="groupA" type="checkbox" value="poo"> poo</label>
+    <label><input name="groupA" type="checkbox" value="chew"> chew</label>
+
+    <label><input name="individualA" type="checkbox"> shew</label>
+    <label><input name="individualB" type="checkbox" value="doo"> moo</label>
+</div>
+<script>
 runTest(
     "#input-checkbox",
     { groupA: null, individualA: false, individualB: null },
@@ -612,6 +495,14 @@ runTest(
         { path: "individualB", expected: "doo" },
     ]
 );
+</script>
+
+<div id="input-select">
+    <select name="value">
+        <option .options[] />
+    </select>
+</div>
+<script>
 runTest(
     "#input-select",
     { value: null, options: [ "a", "b", "c", "d" ] },
@@ -630,6 +521,14 @@ runTest(
         { valueFrom: "select", expected: "a" },
     ]
 );
+</script>
+
+<div id="input-multiselect">
+    <select :assign-to="values" multiple>
+        <option .options[] />
+    </select>
+</div>
+<script>
 runTest(
     "#input-multiselect",
     { values: null, options: [ "a", "b", "c", "d" ] },
@@ -655,6 +554,14 @@ runTest(
         { valueFrom: "select", expected: "a" },
     ]
 );
+</script>
+
+<div id="input-non-string">
+    <input name="color" type="color">
+    <input name="number" type="number">
+    <input name="date" type="date">
+</div>
+<script>
 runTest(
     "#input-non-string",
     { color: "#ffddff", number: 18, date: new Date("1995-12-17") },
@@ -693,6 +600,16 @@ runTest(
         { valueFrom: "[name=date]", expected: new Date("1993-10-15") },
     ]
 );
+</script>
+
+<div id="input-root-value">
+    <select . multiple>
+        <option>a</option>
+        <option>b</option>
+        <option>c</option>
+    </select>
+</div>
+<script>
 runTest(
     "#input-root-value",
     [ "a" ],
@@ -709,6 +626,17 @@ runTest(
         { valueFrom: "select", expected: [ "b" ] },
     ]
 );
+</script>
+
+<div id="attributes">
+    <div id="attr" attr.=".attr" normal="okay"></div>
+    <div id="num" num.=".number"></div>
+    <div id="bool" bool.=".boolean"></div>
+    <div id="is-null" is-null.=".is_nullish"></div>
+    <div id="class" class.=".is_array"></div>
+    <div id="style" style.=".is_object"></div>
+</div>
+<script>
 runTest(
     "#attributes",
     {
@@ -757,6 +685,10 @@ runTest(
         { selector: "#style", attr: "style", expected: "" },
     ]
 );
+</script>
+
+<button id="events" @click=".clicker" @mouseup=".upper" @mousemove=".mover">button</button>
+<script>
 runTest(
     "#events",
     {
@@ -804,6 +736,22 @@ runTest(
         { path: "moverCalls", expected: 11 },
     ]
 );
+</script>
+
+<div id="show-hide">
+    <div id="show" :show-if=".show?">showing</div>
+    <div id="neg-show" :show-if="!.show?">showing</div>
+
+    <div id="inline-show" .show?>showing</div>
+    <div id="inline-neg-show" !.show?>showing</div>
+
+    <ul .arr.length?>
+        <li .arr[]></li>
+    </ul>
+
+    <strong .!falsy?>all falsy?</strong>
+</div>
+<script>
 runTest(
     "#show-hide",
     { show: true, arr: [ "a", "b", "c" ], falsy: 0 },
@@ -831,6 +779,22 @@ runTest(
         { selector: "strong", expected: null },
     ]
 );
+</script>
+
+<div id="root-reference">
+    <div .obj>
+        <em .text></em>
+        <strong .$.text></strong>
+        <span $.text></span>
+        <button id="inner" @click="$.randomText">inner context</button>
+
+        <input id="input1" $.input1>
+        <input id="input2" :assign-to="$.input2">
+        <div id="root-show" $.opt.show? class.="$.opt.classes">hello</div>
+    </div>
+    <button id="outer" @click=".randomText">outer context</button>
+</div>
+<script>
 runTest(
     "#root-reference",
     {
@@ -883,6 +847,17 @@ runTest(
         { selector: "#root-show", attr: "class", expected: "a b c" },
     ]
 );
+</script>
+
+<div id="root-reference-arrays">
+    <ul .lists[]>
+        <li .[]>
+            <span .text></span> <button @click="$.change">add</button>
+        </li>
+        <li $.base class="base"></li>
+    </ul>
+</div>
+<script>
 runTest(
     "#root-reference-arrays",
     {
@@ -912,6 +887,29 @@ runTest(
         { selectAll: ".base", expected: [ "??", "??", "??" ] },
     ]
 );
+</script>
+
+<div id="template-basic">
+    <div class="original">
+        <p :template="original">
+            original <span .text></span>
+        </p>
+        <t:original></t:original>
+    </div>
+
+    <div class="nested">
+        <p :template="nested">
+            <span>nested</span>
+            <t:disappearing></t:disappearing>
+        </p>
+        <t:nested></t:nested>
+
+        <vivy:template name="disappearing">
+            hi <span .text></span>
+        </vivy:template>
+    </div>
+</div>
+<script>
 runTest(
     "#template-basic",
     { text: "text" },
@@ -924,6 +922,20 @@ runTest(
         { selectAll: ".nested p span", expected: [ "nested", "text too", "nested", "text too" ] },
     ]
 );
+</script>
+
+<div id="template-complex">
+    <ul>
+        <li :template="tree">
+            <span .name @dblclick="$.addChild"></span>
+            <ul .children.length?>
+                <t:tree .children[]></t:tree>
+                <li><button @click="$.addChild">+</button></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+<script>
 runTest(
     "#template-complex",
     {
@@ -955,6 +967,12 @@ runTest(
         { path: "children.1.name", expected: "child2" },
     ]
 );
+</script>
+
+<div id="show-if-bug">
+    <div .prop_a.prop_b?><span .prop_a.prop_b></span></div>
+</div>
+<script>
 runTest(
     "#show-if-bug",
     { prop_a: null },
@@ -965,7 +983,41 @@ runTest(
         { selector: "div span", expected: "hello" },
     ]
 );
-//*/
+</script>
+
+<script>
+(function jsonTest() {
+    const tests = [
+        { obj: null, json: "null" },
+        { obj: 1, json: "1" },
+        { obj: { a: [ 1, 2, 3, 4 ] }, json: `{"a":[1,2,3,4]}` },
+        { obj: [ { a: 1 }, { a: 2 } ], json: `[{"a":1},{"a":2}]` },
+        { obj: { toJSON: () => ({ a: 3 }), b: 4 }, json: `{"a":3}` },
+    ]
+    for(const { obj, json } of tests) {
+        const actual = JSON.stringify(vivify(document.createElement("div"), obj));
+        if(json != actual) {
+            throw new Error(`JSON.stringify broken -- expected: '${json}', actual: '${actual}'`);
+        }
+    }
+})();
+
+(function sameValueTest() {
+    const div = document.createElement("div");
+    div.innerHTML = `<span .text class.="$.attr"></span><span .vals[]></span>`;
+
+    const data = vivify(div, { text: "hello", attr: "okay", vals: [ 1, 2, 3 ] });
+
+    const observer = new MutationObserver((mutations) => {
+        throw new Error("Identical values should not mutate DOM");
+    });
+    observer.observe(div, { childList: true, attributes: true, subtree: true });
+
+    data.text = "hello";
+    data.attr = "okay";
+    data.vals = data.vals;
+    data.vals[0] = 1;
+})();
 </script>
 </body>
 </html>
