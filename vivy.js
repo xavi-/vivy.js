@@ -751,6 +751,9 @@ Consider using :scope="${traversal.join(".")}" instead
 	return treeRoot;
 }
 
-return function vivy(elem, data) { return createProxyTree(elem, data).proxy; }
+return function vivy(elem, data) {
+	if(!(elem instanceof HTMLElement)) throw new Error("First vivy.js arg must be a HTMLElements");
+	return createProxyTree(elem, data).proxy;
+};
 })();
 const vivify = vivy;

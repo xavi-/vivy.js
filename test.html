@@ -1032,6 +1032,14 @@ runTest(
     data.vals = data.vals;
     data.vals[0] = 1;
 })();
+
+(function nonHtmlValueArgTest() {
+    let threwHelpfulError = false;
+    try { vivy({}, {}); }
+    catch(err) { threwHelpfulError = err.message.includes("HTMLElement"); }
+
+    if(!threwHelpfulError) throw Error("Vivy accepted non HTMLElement argument");
+})();
 </script>
 </body>
 </html>
