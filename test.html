@@ -134,6 +134,20 @@ runTest(
 );
 </script>
 
+<div id="primitive-overriding-children">
+    <p .paragraph>
+        <span>some <b>text</b></span>
+        <span>more <i>text</i></span>
+    </p>
+</div>
+<script>
+runTest(
+    "#primitive-overriding-children",
+    { paragraph: "paragraph" },
+    [ { selector: "p", expected: "paragraph" } ]
+);
+</script>
+
 <div id="basic-nested-test">
     <section .section>
         <h2 .title></h2>

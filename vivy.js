@@ -93,8 +93,18 @@ function applyValueToDom(tree, data) {
 					}
 
 					element.textContent = `${data}`;
-				} else if(tree.elements.length <= 1 && !hydrating) {
-					console.warn(`Value "${data}" from $.${scope.join(".")} is unused`);
+				} else if(!hydrating) {
+					const path = "$." + scope.join(".")
+					const anyReferencesChildren = tree.elements.some(
+						el => el.element !== element && element.contains(el.element)
+					);
+
+					if(anyReferencesChildren) { // `data` value is not used by any children
+						console.warn(`Value "${data}" from ${path} is unused`);
+					} else if(childCount > 0) {
+						console.warn(`Value "${data}" from ${path} removed ${childCount} elements`);
+						element.textContent = `${data}`;
+					}
 				}
 			} else if(tree.originalChildElements && element.children.length <= 0) {
 				element.textContent = "";
@@ -733,10 +743,8 @@ Consider using :scope="${traversal.join(".")}" instead
 	};
 
 	treeRoot = hydrate([ elem ], rootData, []);
-	if(!treeRoot.proxy) {
-		treeRoot.proxy = createProxy([], rootData);
-		treeRoot.proxy(rootData);
-	}
+	if(!treeRoot.proxy) { treeRoot.proxy = createProxy([], rootData); }
+	treeRoot.proxy(rootData); // Here to make sure DOM is completely synced with data
 
 	window.tree = treeRoot;
 
