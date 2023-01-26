@@ -579,7 +579,7 @@ function createProxyTree(elem, rootData) {
 			subtree = subtree.children.get(part);
 			traversed = [ ...traversed, part ];
 
-			if(subData && !(part in subData)) {
+			if(subData && typeof subData === "object" && !(part in subData)) {
 				const nearMiss = Object.keys(subData).find(key => key.toLowerCase() == part);
 				if(nearMiss != null) {
 console.warn(`!!!

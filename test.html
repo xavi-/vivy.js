@@ -999,6 +999,24 @@ runTest(
 );
 </script>
 
+<div id="primitive-to-object">
+    <div .obj>
+        <span .name></span>
+    </div>
+</div>
+<script>
+runTest(
+    "#primitive-to-object",
+    { obj: "name" },
+    [
+        { selector: "div", expected: "name" },
+
+        (proxy) => proxy.obj = { name: "NAME" },
+        { selector: "div span", expected: "NAME" },
+    ]
+);
+</script>
+
 <script>
 (function jsonTest() {
     const tests = [
