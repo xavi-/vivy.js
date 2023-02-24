@@ -74,7 +74,7 @@ function applyValueToDom(tree, data) {
 		}
 
 		if(elem.scope) {
-			const { element, hydrating, scope } = elem;
+			const { element, scope } = elem;
 
 			if(data == null) {
 				if(tree.children.size > 0)
@@ -93,15 +93,17 @@ function applyValueToDom(tree, data) {
 					}
 
 					element.textContent = `${data}`;
-				} else if(!hydrating) {
+				} else if(!tree.hydrating) {
 					const path = "$." + scope.join(".")
-					const anyReferencesChildren = tree.elements.some(
+					const anyReferencedChildren = tree.elements.some(
 						el => el.element !== element && element.contains(el.element)
 					);
 
-					if(anyReferencesChildren) { // `data` value is not used by any children
+					if(anyReferencedChildren) {
+						// skip -- `data` value is not used by any children
+					} else if(childCount === 0) {
 						console.warn(`Value "${data}" from ${path} is unused`);
-					} else if(childCount > 0) {
+					} else { // `data` value is not used by any children
 						console.warn(`Value "${data}" from ${path} removed ${childCount} elements`);
 						element.textContent = `${data}`;
 					}
@@ -730,11 +732,12 @@ Consider using :scope="${traversal.join(".")}" instead
 						console.warn("Object never used?", elem, traversed);
 					}
 
-					const element = { element: elem, scope: traversed, hydrating: true };
+					const element = { element: elem, scope: traversed };
 					subtree.elements.push(element);
 
+					subtree.hydrating = true;
 					applyValueToDom(subtree, subData);
-					element.hydrating = false;;
+					subtree.hydrating = false;;
 				}
 			}
 		}
