@@ -699,7 +699,10 @@ Consider using :scope="${traversal.join(".")}" instead
 				if(untraversed.length !== 0)
 					throw new Error(`Event handler path can't reference arrays, ${elem}`);
 				if(!(subData instanceof Function))
-					console.warn(`Non-function found for event handler: ${subData}`, elem);
+					console.warn(
+						`Non-function found for event handler at $.${traversed.join(".")}:`,
+						subData, elem
+					);
 
 				elem.removeAttribute(`@${event}`);
 
