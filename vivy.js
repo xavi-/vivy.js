@@ -45,7 +45,7 @@ function applyValueToDom(tree, data) {
 
 		if(elem.syncer) {
 			const { element, syncer } = elem;
-			element.addEventListener("change", syncer);
+			element.addEventListener("input", syncer);
 
 			const tagName = element.tagName;
 			if(tagName == "INPUT" && element.type == "number") {

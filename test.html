@@ -373,28 +373,28 @@ runTest(
         (_, elem) => {
             const input = elem.querySelector("#input");
             input.value = "poop";
-            input.dispatchEvent(new Event("change"))
+            input.dispatchEvent(new Event("input"))
         },
         { path: "input", expected: "poop" },
 
         (_, elem) => {
             const named = elem.querySelector("#named");
             named.value = "poop";
-            named.dispatchEvent(new Event("change"))
+            named.dispatchEvent(new Event("input"))
         },
         { path: "named", expected: "poop" },
 
         (_, elem) => {
             const value = elem.querySelector("#value");
             value.value = "poop";
-            value.dispatchEvent(new Event("change"))
+            value.dispatchEvent(new Event("input"))
         },
         { path: "value", expected: "poop" },
 
         (_, elem) => {
             const assigned = elem.querySelector("#assigned");
             assigned.value = "poop";
-            assigned.dispatchEvent(new Event("change"))
+            assigned.dispatchEvent(new Event("input"))
         },
         { path: "assigned", expected: "poop" },
     ]
@@ -427,7 +427,7 @@ runTest(
         (_, elem) => {
             const input = elem.querySelector("td:nth-child(2) > input");
             input.value = 182;
-            input.dispatchEvent(new Event("change"))
+            input.dispatchEvent(new Event("input"))
         },
         { path: ".0.1", expected: 182 },
     ]
@@ -456,7 +456,7 @@ runTest(
         (_, elem) => {
             const input = elem.querySelector("[value=bab]");
             input.checked = true;
-            input.dispatchEvent(new Event("change"))
+            input.dispatchEvent(new Event("input"))
         },
         { path: "result", expected: "bab" },
     ]
@@ -488,11 +488,11 @@ runTest(
         (_, elem) => {
             let input = elem.querySelector("[value=woo]");
             input.checked = true;
-            input.dispatchEvent(new Event("change"));
+            input.dispatchEvent(new Event("input"));
 
             input = elem.querySelector("[value=poo]");
             input.checked = true;
-            input.dispatchEvent(new Event("change"))
+            input.dispatchEvent(new Event("input"))
         },
         { path: "groupA", expected: [ "woo", "poo" ] },
 
@@ -504,7 +504,7 @@ runTest(
         (_, elem) => {
             let input = elem.querySelector("[value=doo]");
             input.checked = true;
-            input.dispatchEvent(new Event("change"));
+            input.dispatchEvent(new Event("input"));
         },
         { path: "individualB", expected: "doo" },
     ]
@@ -527,7 +527,7 @@ runTest(
         (_, elem) => {
             let input = elem.querySelector("select");
             input.children[1].selected = true;
-            input.dispatchEvent(new Event("change"));
+            input.dispatchEvent(new Event("input"));
         },
         { path: "value", expected: "b" },
 
@@ -553,14 +553,14 @@ runTest(
         (_, elem) => {
             let input = elem.querySelector("select");
             input.children[1].selected = true;
-            input.dispatchEvent(new Event("change"));
+            input.dispatchEvent(new Event("input"));
         },
         { path: "values", expected: [ "a", "b", "d" ] },
 
         (_, elem) => {
             let input = elem.querySelector("select");
             input.children[0].selected = false;
-            input.dispatchEvent(new Event("change"));
+            input.dispatchEvent(new Event("input"));
         },
         { path: "values", expected: [ "b", "d" ] },
 
@@ -584,7 +584,7 @@ runTest(
         (_, elem) => {
             let input = elem.querySelector("[name=color]");
             input.value = "#aaddff";
-            input.dispatchEvent(new Event("change"));
+            input.dispatchEvent(new Event("input"));
         },
         { path: "color", expected: "#aaddff" },
 
@@ -595,7 +595,7 @@ runTest(
         (_, elem) => {
             let input = elem.querySelector("[name=number]");
             input.valueAsNumber = 22;
-            input.dispatchEvent(new Event("change"));
+            input.dispatchEvent(new Event("input"));
         },
         { path: "number", expected: 22 },
 
@@ -606,7 +606,7 @@ runTest(
         (_, elem) => {
             let input = elem.querySelector("[name=date]");
             input.valueAsDate = new Date("1994-11-16");
-            input.dispatchEvent(new Event("change"));
+            input.dispatchEvent(new Event("input"));
         },
         { path: "date", expected: new Date("1994-11-16") },
 
@@ -632,7 +632,7 @@ runTest(
         (_, elem) => {
             let input = elem.querySelector("select");
             input.children[1].selected = true;
-            input.dispatchEvent(new Event("change"));
+            input.dispatchEvent(new Event("input"));
         },
         { path: ".", expected: [ "a", "b" ] },
 
@@ -842,14 +842,14 @@ runTest(
         (_, elem) => {
             const input = elem.querySelector("#input1");
             input.value = "another input";
-            input.dispatchEvent(new Event("change"))
+            input.dispatchEvent(new Event("input"))
         },
         { valueFrom: "#input1", expected: "another input" },
 
         (_, elem) => {
             const input = elem.querySelector("#input2");
             input.value = "another input";
-            input.dispatchEvent(new Event("change"))
+            input.dispatchEvent(new Event("input"))
         },
         { valueFrom: "#input2", expected: "another input" },
 
