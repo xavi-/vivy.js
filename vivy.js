@@ -586,7 +586,7 @@ function createProxyTree(elem, rootData) {
 				if(nearMiss != null) {
 console.warn(`!!!
 Near miss found -- "${part}" (html attribute) vs "${nearMiss}" (data property)
-HTML attributes are always lowercased by the browser so mixed-case scope references aren't possible.
+HTML attributes are lowercased by the browser so mixed-case scope references aren't possible.
 Consider using :scope="${traversal.join(".")}" instead
 !!!`);
 				}
