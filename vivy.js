@@ -77,7 +77,7 @@ function applyValueToDom(tree, data) {
 			const { element, scope } = elem;
 
 			if(data == null) {
-				if(tree.children.size > 0)
+				if(tree.children.size > 0 && element.parentNode != null)
 					console.warn(`Hydration failure: null found at $.${scope.join(".")}`, element);
 
 				if(element.children.length <= 0) element.textContent = "";
@@ -291,8 +291,8 @@ function createSyncer(root, path, elem) {
 	if (path.length === 0) syncer = (val) => root.proxy(val);
 	else {
 		const prop = path[path.length - 1];
-		const proxy = getNode(root, path.slice(0, -1)).proxy;
-		syncer = (val => proxy[prop] = val)
+		const node = getNode(root, path.slice(0, -1));
+		syncer = (val => node.proxy[prop] = val)
 	}
 
 	if(elem.type == "number") {
@@ -488,7 +488,14 @@ function createProxyTree(elem, rootData) {
 
 				if(prop == "toJSON") return value?.toJSON ?? (() => value);
 
-				return getNode(treeRoot, [ ...path, prop ])?.proxy ?? value?.[prop];
+				let rtn = getNode(treeRoot, [ ...path, prop ])?.proxy;
+				if(rtn != null) return rtn;
+
+				rtn = value?.[prop];
+				if(Array.isArray(value)) return rtn;
+				if(rtn instanceof Function) rtn = rtn.bind(value);
+
+				return rtn;
 			},
 			set(_, prop, value) {
 				const parent = getValue(rootData, path);
@@ -508,7 +515,13 @@ function createProxyTree(elem, rootData) {
 						_updateDom(node.children.get("length"), parent.length);
 					}
 				} else if(node.children.has(prop)) {
-					_updateDom(node.children.get(prop), value);
+					const valNode = node.children.get(prop);
+
+					if(!valNode.proxy && typeof value === "object") {
+						valNode.proxy = createProxy([ ...path, prop ], value);
+					}
+
+					_updateDom(valNode, value);
 				} else if(parent.length !== prevLength && node.children.has("length")) {
 					_updateDom(node.children.get("length"), value)
 				}

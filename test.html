@@ -1017,6 +1017,34 @@ runTest(
 );
 </script>
 
+<div id="null-to-object">
+    <div .obj :show-if=".">
+        <span .name></span>
+        <input .name>
+    </div>
+</div>
+<script>
+runTest(
+    "#null-to-object",
+    {},
+    [
+        { selector: "div", expected: null },
+
+        (proxy) => proxy.obj = { name: "NAME" },
+        { selector: "div span", expected: "NAME" },
+
+         (_, elem) => {
+            const input = elem.querySelector("input");
+            input.value = "poop";
+            input.dispatchEvent(new Event("input"))
+        },
+        { path: "obj.name", expected: "poop" },
+        { selector: "div span", expected: "poop" },
+    ]
+);
+</script>
+
+
 <script>
 (function jsonTest() {
     const tests = [
