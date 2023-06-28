@@ -983,6 +983,28 @@ runTest(
 );
 </script>
 
+<div id="template-with-scope">
+    <t:embed .info></t:embed>
+    <t:embed-single .info></t:embed-single>
+
+    <vivy:template name="embed">
+        Hello <span .name></span>
+    </vivy:template>
+    <vivy:template name="embed-single">
+        <em>Hello <strong .name></strong></em>
+    </vivy:template>
+</div>
+<script>
+runTest(
+    "#template-with-scope",
+    { info: { name: "emery" } },
+    [
+        { selector: "span", expected: "emery" },
+        { selector: "strong", expected: "emery" },
+    ]
+);
+</script>
+
 <div id="show-if-bug">
     <div .prop_a.prop_b?><span .prop_a.prop_b></span></div>
 </div>

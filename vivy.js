@@ -392,7 +392,7 @@ function findTemplates(elemRoot) {
 			if(!name) throw new Error(`Template missing name attribute: ${elem}`);
 			if(rtn.has(name)) throw new Error(`Duplicate template name found: ${name}`);
 
-			const fragment = document.createRange().createContextualFragment(elem.innerHTML);
+			const fragment = document.createRange().createContextualFragment(elem.innerHTML.trim());
 			elem.remove();
 
 			rtn.set(name, fragment);
@@ -424,15 +424,26 @@ function findTemplates(elemRoot) {
 }
 
 function insertTemplate(placement, template, scopePath, showIfPath) {
-	const clone = template.cloneNode(true);
+	let clone = template.cloneNode(true);
+	let isFragment = (clone.nodeType == Node.DOCUMENT_FRAGMENT_NODE);
 
-	if(scopePath?.length > 0) clone.setAttribute(":scope", scopePath.join("."));
+	if(scopePath?.length > 0) {
+		if(isFragment) {
+			if(clone.lastChild === clone.firstChild) clone = clone.firstChild;
+			else {
+				const tmp = document.createElement("vivy-template");
+				tmp.appendChild(clone);
+				clone = tmp;
+			}
+			isFragment = false;
+		}
+		clone.setAttribute(":scope", "." + scopePath.join("."));
+	}
 	if(showIfPath != null) {
 		const { negate, path } = showIfPath;
-		clone.attributes[":show-if"] = (negate ? "!": "") + path.join(".");
+		clone.setAttribute(":show-if", (negate ? "!": ".") + path.join("."));
 	}
 
-	const isFragment = (clone.nodeType == Node.DOCUMENT_FRAGMENT_NODE);
 	const insertedElements = (isFragment ? Array.from(clone.children) : [ clone ]);
 
 	placement.parentNode.insertBefore(clone, placement);
