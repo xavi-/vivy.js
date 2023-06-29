@@ -1066,6 +1066,34 @@ runTest(
 );
 </script>
 
+<div id="null-to-nested-object">
+    <div .obj :show-if=".">
+        <div .nested>
+            <span .name></span>
+            <input .name>
+        </div>
+    </div>
+</div>
+<script>
+runTest(
+    "#null-to-nested-object",
+    {},
+    [
+        { selector: "div", expected: null },
+
+        (proxy) => proxy.obj = { nested: { name: "NAME" } },
+        { selector: "div span", expected: "NAME" },
+
+         (_, elem) => {
+            const input = elem.querySelector("input");
+            input.value = "poop";
+            input.dispatchEvent(new Event("input"))
+        },
+        { path: "obj.nested.name", expected: "poop" },
+        { selector: "div span", expected: "poop" },
+    ]
+);
+</script>
 
 <script>
 (function jsonTest() {

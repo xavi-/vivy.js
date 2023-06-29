@@ -292,7 +292,7 @@ function createSyncer(root, path, elem) {
 	else {
 		const prop = path[path.length - 1];
 		const node = getNode(root, path.slice(0, -1));
-		syncer = (val => node.proxy[prop] = val)
+		syncer = (val => node.proxy[prop] = val);
 	}
 
 	if(elem.type == "number") {
@@ -528,8 +528,8 @@ function createProxyTree(elem, rootData) {
 				} else if(node.children.has(prop)) {
 					const valNode = node.children.get(prop);
 
-					if(!valNode.proxy && typeof value === "object") {
-						valNode.proxy = createProxy([ ...path, prop ], value);
+					if(valNode.proxy == null) {
+						populateProxySubtree([ ...path, prop ], valNode, value);
 					}
 
 					_updateDom(valNode, value);
@@ -562,6 +562,24 @@ function createProxyTree(elem, rootData) {
 		});
 
 		return proxy;
+	};
+
+	const populateProxySubtree = (path, subtree, value) => {
+		const nodes = [ [ path, subtree, value] ];
+
+		let node;
+		while((node = nodes.pop())) {
+			let [ path, subtree, value ] = node;
+
+			if(value == null) continue;
+			if(subtree.children.size <= 0) continue;
+
+			subtree.proxy = createProxy(path, value);
+
+			for(const [ prop, child ] of subtree.children) {
+				nodes.push([ [ ...path, prop ], child, value[prop] ]);
+			}
+		}
 	};
 
 	const createEventHandler = (elem, handlerPath, contextPath) => {
