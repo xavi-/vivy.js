@@ -985,12 +985,12 @@ runTest(
 
 <div id="template-with-scope">
     <t:embed .info></t:embed>
-    <t:embed-single .info></t:embed-single>
+    <t:embed-single-child .info></t:embed-single-child>
 
     <vivy:template name="embed">
         Hello <span .name></span>
     </vivy:template>
-    <vivy:template name="embed-single">
+    <vivy:template name="embed-single-child">
         <em>Hello <strong .name></strong></em>
     </vivy:template>
 </div>
