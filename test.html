@@ -1005,6 +1005,31 @@ runTest(
 );
 </script>
 
+<div id="template-with-null-scope">
+    <div .parent :show-if=".">
+        <t:embed .info :show-if="."></t:embed>
+    </div>
+
+    <vivy:template name="embed">
+        <div>
+            Hello <span .name></span>
+            <input .name>
+        </div>
+    </vivy:template>
+</div>
+<script>
+runTest(
+    "#template-with-null-scope",
+    { parent: null },
+    [
+        { selector: "div span", expected: null },
+
+        (proxy) => proxy.parent = { info: { name: "emery" } },
+        { selector: "span", expected: "emery" },
+    ]
+);
+</script>
+
 <div id="show-if-bug">
     <div .prop_a.prop_b?><span .prop_a.prop_b></span></div>
 </div>

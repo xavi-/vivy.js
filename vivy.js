@@ -80,7 +80,12 @@ function applyValueToDom(tree, data) {
 				if(tree.children.size > 0 && element.parentNode != null)
 					console.warn(`Hydration failure: null found at $.${scope.join(".")}`, element);
 
-				if(element.children.length <= 0) element.textContent = "";
+				if(element.children.length <= 0) { // No child elements
+					element.childNodes.forEach(node => {
+						// Vivy inserts comments to track where :show-if and array elements go
+						if(node.nodeType === Node.TEXT_NODE) node.remove();
+					});
+				}
 			} else if(isPrimitive) {
 				const childCount = element.children.length;
 				if(childCount === 0) { element.textContent = `${data}`; }
@@ -528,11 +533,11 @@ function createProxyTree(elem, rootData) {
 				} else if(node.children.has(prop)) {
 					const valNode = node.children.get(prop);
 
+					_updateDom(valNode, value);
+
 					if(valNode.proxy == null) {
 						populateProxySubtree([ ...path, prop ], valNode, value);
 					}
-
-					_updateDom(valNode, value);
 				} else if(parent.length !== prevLength && node.children.has("length")) {
 					_updateDom(node.children.get("length"), value)
 				}
