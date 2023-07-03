@@ -442,9 +442,26 @@ function insertTemplate(placement, template, scopePath, showIfPath) {
 			}
 			isFragment = false;
 		}
-		clone.setAttribute(":scope", "." + scopePath.join("."));
+	}
+
+	const existing = (isFragment ? {} : parseAttributesToPaths(clone));
+	if(scopePath?.length > 0) {
+		const templateScope = [ ...scopePath ];
+		if(existing.scopePath) {
+			clone.removeAttribute("." + existing.scopePath.join("."));
+			templateScope.push(...existing.scopePath);
+		}
+
+		clone.setAttribute(":scope", "." + templateScope.join("."));
 	}
 	if(showIfPath != null) {
+		if(existing.showIf) {
+			console.warn(
+				"Warning: two show-if attributes found on template",
+				clone, existing.showIf.path, showIfPath
+			);
+		}
+
 		const { negate, path } = showIfPath;
 		clone.setAttribute(":show-if", (negate ? "!": ".") + path.join("."));
 	}
@@ -646,7 +663,7 @@ Consider using :scope="${traversal.join(".")}" instead
 		return { subtree, subData, traversed, untraversed };
 	};
 
-	const hydrate = (elements, data, path, startRoot) => {
+	const hydrate = (elements, dataRoot, path, startRoot) => {
 		const hydrateRoot = startRoot ?? {
 			elements: elements.map(element => ({ element, scope: path })),
 			proxy: null,
@@ -658,7 +675,7 @@ Consider using :scope="${traversal.join(".")}" instead
 		// properly support paths that start with `$.`
 		const root = treeRoot ?? hydrateRoot;
 
-		let node, nodes = elements.map(elem => [ elem, hydrateRoot, data, path ])
+		let node, nodes = elements.map(elem => [ elem, hydrateRoot, dataRoot, path ])
 		while((node = nodes.shift())) {
 			const [ elem, tree, data, path ] = node;
 

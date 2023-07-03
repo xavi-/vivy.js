@@ -1030,6 +1030,42 @@ runTest(
 );
 </script>
 
+<div id="template-with-nested-scope">
+    <div .parent>
+        <t:embed1 .info :show-if=".""></t:embed1>
+        <t:embed2 .info :show-if=".""></t:embed2>
+    </div>
+
+    <vivy:template name="embed1">
+        <div .nested>
+            Hello <span .name></span>
+        </div>
+    </vivy:template>
+
+
+    <vivy:template name="embed2">
+        more text
+        <div .nested>
+            Hello <em .name></em>
+        </div>
+        and after
+    </vivy:template>
+</div>
+<script>
+runTest(
+    "#template-with-nested-scope",
+    { parent: null },
+    [
+        { selector: "div span", expected: null },
+        { selector: "div em", expected: null },
+
+        (proxy) => proxy.parent = { info: { nested: { name: "emery" } } },
+        { selector: "div span", expected: "emery" },
+        { selector: "div em", expected: "emery" },
+    ]
+);
+</script>
+
 <div id="show-if-bug">
     <div .prop_a.prop_b?><span .prop_a.prop_b></span></div>
 </div>
