@@ -77,7 +77,7 @@ function applyValueToDom(tree, data) {
 			const { element, scope } = elem;
 
 			if(data == null) {
-				if(tree.children.size > 0 && element.parentNode != null)
+				if(tree.children.size > 0 && document.contains(element))
 					console.warn(`Hydration failure: null found at $.${scope.join(".")}`, element);
 
 				if(element.children.length <= 0) { // No child elements
