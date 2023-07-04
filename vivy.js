@@ -62,7 +62,9 @@ function applyValueToDom(tree, data) {
 					(data === true && element.value == "on") ||
 					`${data}` == element.value || data.includes?.(element.value)
 				);
-			} else if(tagName == "SELECT" && element.multiple) {
+			} else if(tagName == "INPUT" && element.type == "file") {
+				// skip -- file inputs are read-only
+			} else  if(tagName == "SELECT" && element.multiple) {
 				if(data && data.length > 0) {
 					for(const option of element.options) {
 						option.selected = data.includes(option.value);
@@ -312,7 +314,7 @@ function createSyncer(root, path, elem) {
 	}
 
 	if(elem.type == "file") {
-		return event => syncer(event.target.files);
+		return event => syncer([ ...event.target.files ]);
 	}
 
 	// text, email, password, etc... inputs
