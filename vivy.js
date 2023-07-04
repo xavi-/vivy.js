@@ -63,7 +63,8 @@ function applyValueToDom(tree, data) {
 					`${data}` == element.value || data.includes?.(element.value)
 				);
 			} else if(tagName == "INPUT" && element.type == "file") {
-				// skip -- file inputs are read-only
+				// skip unless null -- file inputs are read-only
+				if(data == null) element.value = null;
 			} else  if(tagName == "SELECT" && element.multiple) {
 				if(data && data.length > 0) {
 					for(const option of element.options) {
