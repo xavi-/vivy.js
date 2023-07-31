@@ -1197,6 +1197,24 @@ runTest(
 
     if(!threwHelpfulError) throw new Error("Vivy accepted non HTMLElement argument");
 })();
+
+(function testSpreadOffer() {
+    const div = document.createElement("div");
+
+    const data = vivify(div, {});
+    data.text = "hello";
+    data.attr = "okay";
+    data.vals = { a: 1, b: 2 };
+
+    const copy = { ...data };
+
+    if(
+        copy.text != data.text ||
+        copy.attr != data.attr ||
+        copy.vals.a != data.vals.a ||
+        copy.vals.b != data.vals.b
+    ) throw new Error("Spread copy failed to copy all values");
+})();
 </script>
 </body>
 </html>

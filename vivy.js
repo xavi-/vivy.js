@@ -584,6 +584,9 @@ function createProxyTree(elem, rootData) {
 			},
 			ownKeys() { return Reflect.ownKeys(getValue(rootData, path)); },
 			has(_, key) { return Reflect.has(getValue(rootData, path), key); },
+			getOwnPropertyDescriptor(_, key) {
+				return Reflect.getOwnPropertyDescriptor(getValue(rootData, path), key);
+			}
 		});
 
 		return proxy;
