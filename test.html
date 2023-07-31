@@ -1215,6 +1215,16 @@ runTest(
         copy.vals.b != data.vals.b
     ) throw new Error("Spread copy failed to copy all values");
 })();
+
+(function testNulledSubFields() {
+const div = document.createElement("div");
+    div.innerHTML = `<span .field.a.more></span>`;
+
+    const data = vivify(div, { field: { a: { more: 1 }, b: 2 } });
+    data.field = {};
+
+    if(data.field.a != null) throw new Error("Field should be null");
+})();
 </script>
 </body>
 </html>

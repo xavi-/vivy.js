@@ -525,7 +525,7 @@ function createProxyTree(elem, rootData) {
 				if(prop == "toJSON") return value?.toJSON ?? (() => value);
 
 				let rtn = getNode(treeRoot, [ ...path, prop ])?.proxy;
-				if(rtn != null) return rtn;
+				if(rtn != null && value?.[prop] != null) return rtn;
 
 				rtn = value?.[prop];
 				if(Array.isArray(value)) return rtn;
