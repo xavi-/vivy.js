@@ -1195,7 +1195,7 @@ runTest(
     try { vivy({}, {}); }
     catch(err) { threwHelpfulError = err.message.includes("HTMLElement"); }
 
-    if(!threwHelpfulError) throw Error("Vivy accepted non HTMLElement argument");
+    if(!threwHelpfulError) throw new Error("Vivy accepted non HTMLElement argument");
 })();
 </script>
 </body>
