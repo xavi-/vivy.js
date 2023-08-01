@@ -141,8 +141,8 @@ function gatherElements(tree) {
 	return rtn;
 }
 
-function adjustArrayTree(subtree, data, path, hydrate) {
-	const arr = Array.from(data ?? []);
+function adjustArrayTree(subtree, dataRoot, arrData, path, hydrate) {
+	const arr = Array.from(arrData ?? []);
 	const children = subtree.children;
 	const subtreeSize = [ ...children.keys() ].filter(key => /\d+/.test(key)).length;
 
@@ -166,7 +166,6 @@ function adjustArrayTree(subtree, data, path, hydrate) {
 		for(const idx of toRemoveProps) children.delete(idx);
 	} else if(subtreeSize < arr.length) {
 		for(let idx = subtreeSize; idx < arr.length; idx++) {
-			const datum = arr[idx];
 			const prop = idx.toString();
 			const curPath = [ ...path, prop ];
 
@@ -177,8 +176,11 @@ function adjustArrayTree(subtree, data, path, hydrate) {
 				placement.parentNode.insertBefore(elem, placement);
 				elements.push(elem);
 			}
-			const datumTree = hydrate(elements, datum, curPath)
+
+			const datumTree = emptyTreeNode();
 			children.set(prop, datumTree);
+
+			hydrate(elements, dataRoot, datumTree, curPath);
 		}
 	}
 
@@ -190,7 +192,7 @@ function adjustArrayTree(subtree, data, path, hydrate) {
 	return toUpdated;
 }
 
-function updateDom(subtree, data, path, hydrate) {
+function updateDom(subtree, rootData, data, path, hydrate) {
 	// queueDomUpdate(tree, data);
 	let node, nodes = [ [ subtree, data, path ] ];
 	while((node = nodes.pop())) {
@@ -198,7 +200,7 @@ function updateDom(subtree, data, path, hydrate) {
 
 		const isArray = !!subtree.templates;
 		if(isArray) {
-			const toUpdate = adjustArrayTree(subtree, data, path, hydrate)
+			const toUpdate = adjustArrayTree(subtree, rootData, data, path, hydrate)
 				.map(([ prop, child ]) => [ child, data?.[prop], [ ...path, prop ] ])
 			;
 			nodes.push(...toUpdate);
@@ -490,6 +492,10 @@ function throwOnExcessiveTemplateUsage(name) {
 	templateUsageCount.set(name, count + 1);
 }
 
+function emptyTreeNode() {
+	return { proxy: null, elements: [], children: new Map() };
+}
+
 function createProxyTree(elem, rootData) {
 	if(!elem) throw new Error("Null element passed in");
 
@@ -498,8 +504,9 @@ function createProxyTree(elem, rootData) {
 	const templates = findTemplates(elem);
 
 	const createProxy = (path, initValue) => {
-		const _updateDom = (node, value) => updateDom(node, value, path, hydrate);
-		const updateValue = (value) => {
+		const _updateDom = (node, prop, value) =>
+			updateDom(node, rootData, value, [ ...path, prop ], hydrate);
+		const updateSelf = (value) => {
 			if(path.length <= 0) rootData = value;
 			else {
 				const parent = getValue(rootData, path.slice(0, -1));
@@ -507,12 +514,12 @@ function createProxyTree(elem, rootData) {
 			}
 
 			const node = getNode(treeRoot, path);
-			_updateDom(node, value);
+			updateDom(node, rootData, value, path, hydrate);
 
 			return node.proxy;
 		}
 
-		const target = updateValue;
+		const target = updateSelf;
 		// Can't override name or length on functions
 		for(const [ key, val ] of Object.entries(initValue ?? {})) {
 			if(key != "name" && key != "length") { target[key] = val; }
@@ -546,20 +553,20 @@ function createProxyTree(elem, rootData) {
 				parent[prop] = value;
 
 				if(node.templates && parent.length !== prevLength) {
-					adjustArrayTree(node, parent, path, hydrate);
+					adjustArrayTree(node, rootData, parent, path, hydrate);
 					if(node.children.has("length")) {
-						_updateDom(node.children.get("length"), parent.length);
+						_updateDom(node.children.get("length"), "length", parent.length);
 					}
 				} else if(node.children.has(prop)) {
 					const valNode = node.children.get(prop);
 
-					_updateDom(valNode, value);
+					_updateDom(valNode, prop, value);
 
 					if(valNode.proxy == null) {
 						populateProxySubtree([ ...path, prop ], valNode, value);
 					}
 				} else if(parent.length !== prevLength && node.children.has("length")) {
-					_updateDom(node.children.get("length"), value)
+					_updateDom(node.children.get("length"), "length", value)
 				}
 
 				// Here to update element's attributes
@@ -577,7 +584,7 @@ function createProxyTree(elem, rootData) {
 
 				const node = getNode(treeRoot, path);
 				if(node.children.has(prop)) {
-					_updateDom(node.children.get(prop), null);
+					_updateDom(node.children.get(prop), prop, null);
 				}
 
 				return rtn;
@@ -669,19 +676,15 @@ Consider using :scope="${traversal.join(".")}" instead
 		return { subtree, subData, traversed, untraversed };
 	};
 
-	const hydrate = (elements, dataRoot, path, startRoot) => {
-		const hydrateRoot = startRoot ?? {
-			elements: elements.map(element => ({ element, scope: path })),
-			proxy: null,
-			children: new Map()
-		};
-
+	const hydrate = (elements, dataRoot, hydrateRoot, path) => {
 		// Bootstrapping issue: the `hydrate` function is used to populate `treeRoot`.
 		// On the first call of `hydrate`, `treeRoot` is null.  The `root` value is need to
 		// properly support paths that start with `$.`
 		const root = treeRoot ?? hydrateRoot;
 
-		let node, nodes = elements.map(elem => [ elem, hydrateRoot, dataRoot, path ])
+		const initialData = getValue(dataRoot, path);
+		const initialNode = getNode(root, path) ?? hydrateRoot;
+		let node, nodes = elements.map(elem => [ elem, initialNode, initialData, path ])
 		while((node = nodes.shift())) {
 			const [ elem, tree, data, path ] = node;
 
@@ -707,15 +710,14 @@ Consider using :scope="${traversal.join(".")}" instead
 			const curTree = scopeTraversal?.subtree ?? tree;
 			const curData = scopeTraversal?.subData ?? data;
 			const curPath = scopeTraversal?.traversed ?? path;
-			if(assignToPath) {
-				const { subtree, subData, traversed, untraversed } =
-					traverseToPath(root, curTree, curData, curPath, assignToPath);
+			const untraversed = scopeTraversal?.untraversed ?? [];
 
-				if(untraversed.length !== 0) throw new Error(`Can't assign-to an array, ${elem}`);
+			if(untraversed[0] == "[]") { // Found array path, short-circuit
+				const suffix = untraversed.slice(1);
+				const trees = createArraySubtrees(elem, curTree, curData, curPath, suffix);
 
-				const syncer = createSyncer(root, traversed, elem);
-				subtree.elements.push({ element: elem, syncer });
-				applyValueToDom(subtree, subData);
+				nodes.push(...trees);
+				continue;
 			}
 
 			if(showIfPath) {
@@ -737,10 +739,22 @@ Consider using :scope="${traversal.join(".")}" instead
 						isHydrated = true;
 
 						// Ignore scopeTraversal to ensure arrays are handled correctly
-						hydrate([ elem ], data, path, tree);
+						hydrate([ elem ], dataRoot, root, path);
 					},
 				};
 				subtree.elements.push({ element: elem, showIf: params });
+				applyValueToDom(subtree, subData);
+				continue; // Lazy hydrate elements with `:show-if` attributes
+			}
+
+			if(assignToPath) {
+				const { subtree, subData, traversed, untraversed } =
+					traverseToPath(root, curTree, curData, curPath, assignToPath);
+
+				if(untraversed.length !== 0) throw new Error(`Can't assign-to an array, ${elem}`);
+
+				const syncer = createSyncer(root, traversed, elem);
+				subtree.elements.push({ element: elem, syncer });
 				applyValueToDom(subtree, subData);
 			}
 
@@ -782,43 +796,36 @@ Consider using :scope="${traversal.join(".")}" instead
 				applyValueToDom(subtree, subData);
 			}
 
-			if(showIfPath) {
-				continue; // Lazy hydrate elements with `:show-if` attributes
-			} else if(!scopePath) {
+			if(!scopePath) {
 				const children = Array.from(elem.children);
 				nodes.push(...children.map(child => [ child, tree, data, path ]));
 			} else {
-				const { subtree, subData, traversed, untraversed } = scopeTraversal;
+				const { subtree, subData, traversed } = scopeTraversal;
 
-				if(untraversed[0] == "[]") { // Found array path
-					const suffix = untraversed.slice(1);
-					const trees = createArraySubtrees(elem, subtree, subData, traversed, suffix);
+				const children = Array.from(elem.children);
+				nodes.push(...children.map(child => [ child, subtree, subData, traversed ]));
 
-					nodes.push(...trees);
-					continue;
-				} else {
-					const children = Array.from(elem.children);
-					nodes.push(...children.map(child => [ child, subtree, subData, traversed ]));
-
-					const isObject = (subData && typeof subData === "object");
-					if(isObject && elem.children.length === 0) {
-						console.warn("Object never used?", elem, traversed);
-					}
-
-					const element = { element: elem, scope: traversed };
-					subtree.elements.push(element);
-
-					subtree.hydrating = true;
-					applyValueToDom(subtree, subData);
-					subtree.hydrating = false;;
+				const isObject = (subData && typeof subData === "object");
+				if(isObject && elem.children.length === 0 && subtree.children.length === 0) {
+					console.warn("Object never used?", elem, traversed);
 				}
+
+				const element = { element: elem, scope: traversed };
+				subtree.elements.push(element);
+
+				subtree.hydrating = true;
+				applyValueToDom(subtree, subData);
+				subtree.hydrating = false;;
 			}
 		}
 
 		return hydrateRoot;
 	};
 
-	treeRoot = hydrate([ elem ], rootData, []);
+	const initialNode = emptyTreeNode();
+	initialNode.elements.push({ element: elem, scope: [] });
+
+	treeRoot = hydrate([ elem ], rootData, initialNode, []);
 	if(!treeRoot.proxy) { treeRoot.proxy = createProxy([], rootData); }
 	treeRoot.proxy(rootData); // Here to make sure DOM is completely synced with data
 

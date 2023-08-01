@@ -903,6 +903,137 @@ runTest(
 );
 </script>
 
+<div id="array-attr-event-scope">
+    <ul .items.length?>
+        <li .items[] data-id.=".id" @click=".click">
+            <span .name></span>
+        </li>
+    </ul>
+</div>
+<script>
+runTest(
+    "#array-attr-event-scope",
+    {
+        items: [
+            { id: 1, name: "foo", clicked: "none", click: (_, node) => node.clicked = "foo" },
+            { id: 2, name: "bar", clicked: "none", click: (_, node) => node.clicked = "bar" },
+            { id: 3, name: "baz", clicked: "none", click: (_, node) => node.clicked = "baz" },
+            { id: 4, name: "qux", clicked: "none", click: (_, node) => node.clicked = "qux" },
+        ]
+    },
+    [
+        { selectAll: "li", expected: [ "foo", "bar", "baz", "qux" ] },
+        { selector: "li:nth-child(1)", attr: "data-id", expected: "1" },
+        { selector: "li:nth-child(2)", attr: "data-id", expected: "2" },
+        { selector: "li:nth-child(3)", attr: "data-id", expected: "3" },
+        { selector: "li:nth-child(4)", attr: "data-id", expected: "4" },
+
+        (_, elem) => elem.querySelector("li:nth-child(1)").dispatchEvent(new Event("click")),
+        { path: "items.0.clicked", expected: "foo" },
+        { path: "items.1.clicked", expected: "none" },
+        { path: "items.2.clicked", expected: "none" },
+        { path: "items.3.clicked", expected: "none" },
+
+        (_, elem) => elem.querySelector("li:nth-child(3)").dispatchEvent(new Event("click")),
+        { path: "items.0.clicked", expected: "foo" },
+        { path: "items.1.clicked", expected: "none" },
+        { path: "items.2.clicked", expected: "baz" },
+        { path: "items.3.clicked", expected: "none" },
+
+        (proxy) => proxy.items.length = 0,
+        { selectAll: "li", expected: [] },
+    ]
+)
+</script>
+
+<div id="array-show-if-assign-to-scope">
+    <input id.=".id" .items[] :show-if=".show" :assign-to=".input" />
+</div>
+<script>
+runTest(
+    "#array-show-if-assign-to-scope",
+    {
+        items: [
+            { id: "foo", show: true, input: "foo" },
+            { id: "bar", show: false, input: "bar" },
+            { id: "baz", show: true, input: "baz" },
+            { id: "qux", show: false, input: "qux" },
+        ]
+    },
+    [
+        { valueFrom: "#foo", expected: "foo" },
+        { valueFrom: "#baz", expected: "baz" },
+
+        (proxy) => {
+            proxy.items[1].show = true;
+            proxy.items[3].show = true;
+        },
+        { valueFrom: "#foo", expected: "foo" },
+        { valueFrom: "#bar", expected: "bar" },
+        { valueFrom: "#baz", expected: "baz" },
+        { valueFrom: "#qux", expected: "qux" },
+
+        (_, elem) => {
+            const input = elem.querySelector("#baz");
+            input.value = "another input";
+            input.dispatchEvent(new Event("input"))
+        },
+        { path: "items.2.input", expected: "another input" },
+
+        (proxy) => {
+            proxy.items[0].show = false;
+            proxy.items[2].show = false;
+        },
+        { valueFrom: "#bar", expected: "bar" },
+        { valueFrom: "#qux", expected: "qux" },
+    ]
+);
+</script>
+
+<div id="array-grow-shrink-scope">
+    <div .in>
+        <ul .items.length?>
+            <li .items[] data-id.=".id">
+                <div .show?>
+                    <span .name></span>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+<script>
+runTest(
+    "#array-grow-shrink-scope",
+    {},
+    [
+        { selector: "ul", expected: null },
+
+        (proxy) => {
+            proxy.in = { items: [
+                { id: 1, show: true, name: "foo" },
+                { id: 2, show: false, name: "bar" },
+            ] }
+        },
+        { selectAll: "li > div > span", expected: [ "foo" ] },
+        { selector: "li:nth-child(1)", attr: "data-id", expected: "1" },
+
+        (proxy) => proxy.in.items[1].show = true,
+        { selectAll: "li > div > span", expected: [ "foo", "bar" ] },
+        { selector: "li:nth-child(1)", attr: "data-id", expected: "1" },
+        { selector: "li:nth-child(2)", attr: "data-id", expected: "2" },
+
+        (proxy) => proxy.in.items.pop(),
+        { selectAll: "li > div > span", expected: [ "foo" ] },
+        { selector: "li:nth-child(1)", attr: "data-id", expected: "1" },
+
+        (proxy) => proxy.in.items.push({ id: 3, show: true, name: "baz" }),
+        { selectAll: "li > div > span", expected: [ "foo", "baz" ] },
+        { selector: "li:nth-child(1)", attr: "data-id", expected: "1" },
+        { selector: "li:nth-child(2)", attr: "data-id", expected: "3" },
+    ]
+);
+</script>
+
 <div id="template-basic">
     <div class="original">
         <p :template="original">
