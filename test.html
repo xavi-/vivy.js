@@ -31,7 +31,7 @@ async function runTest(selector, data, asserts) {
 
     for(const [aIdx, assert] of asserts.entries()) {
         if(typeof assert === "function") {
-            await assert(proxy, elem);
+            await (() => { assert(proxy, elem) })();
         } else if(assert.attr) {
             const { selector, attr, expected } = assert;
 
