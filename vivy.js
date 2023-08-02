@@ -644,8 +644,7 @@ function createProxyTree(elem, rootData) {
 
 		for(const part of traversal) {
 			if(subtree.proxy == null) {
-				const isObject = (subData && typeof subData === "object");
-				if(isObject) subtree.proxy = createProxy(traversed, subData);
+				subtree.proxy = createProxy(traversed, subData);
 			}
 
 			if(part == "[]") break;
