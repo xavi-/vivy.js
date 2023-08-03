@@ -701,6 +701,25 @@ runTest(
 );
 </script>
 
+<div id="attr-template">
+    <a id="an1" href.="`mailto:${_.url}`">Hello</a>
+    <a id="an2" .url href.="`mailto:${_}`"></a>
+</div>
+<script>
+runTest(
+    "#attr-template",
+    { url: "http://yahoo.com" },
+    [
+        { selector: "#an1", attr: "href", expected: "mailto:http://yahoo.com" },
+        { selector: "#an2", attr: "href", expected: "mailto:http://yahoo.com" },
+
+        (proxy) => proxy.url = "http://google.com",
+        { selector: "#an1", attr: "href", expected: "mailto:http://google.com" },
+        { selector: "#an2", attr: "href", expected: "mailto:http://google.com" },
+    ]
+);
+</script>
+
 <button id="events" @click=".clicker" @mouseup=".upper" @mousemove=".mover">button</button>
 <script>
 runTest(

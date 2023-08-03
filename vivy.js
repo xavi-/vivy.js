@@ -1,13 +1,37 @@
 const vivy = (() => {
+function html(strings, ...values) {
+	const rtn = [];
+	for(const str of strings) {
+		rtn.push(str);
+
+		const escaped = values.shift()
+			?.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;")
+			.replace(/'/g, "&#39;")
+		;
+		rtn.push(escaped);
+	}
+
+	return rtn.join("");
+}
+function renderAttrTemplate(template, data) {
+	return new Function([ "_", "html" ], `return html\`${template}\`;`)(data, html);
+}
+
 function applyValueToDom(tree, data) {
 	const isPrimitive = data != null && typeof data !== "object" && typeof data !== "function";
 
 	for(const elem of tree.elements) {
 		if(elem.attribute) {
-			const { element, attribute } = elem;
+			const { element, attribute, template } = elem;
 
 			if(data == null) {
 				element.removeAttribute(attribute);
+			} else if(template) {
+				const rendered = renderAttrTemplate(template, data);
+				element.setAttribute(attribute, rendered);
 			} else if(typeof data == "boolean") {
 				if(data) element.setAttribute(attribute, "");
 				else element.removeAttribute(attribute);
@@ -238,7 +262,9 @@ function parseAttributesToPaths(elem) {
 			const start = (negated ? 1 : 0), end = (name.at(-1) == "?" ? -1 : name.length);
 			showIfPath = { negated, path: toParts(name.slice(start, end)), attr: name };
 		} else if(name.charAt(name.length - 1) == ".") {
-			attrPaths.push({ attribute: name.slice(0, -1), path: toParts(value) });
+			const template = (value[0] === "`" ? value.slice(1, -1) : null);
+			const path = (value[0] === "`" ? [] : toParts(value));
+			attrPaths.push({ attribute: name.slice(0, -1), template, path });
 		}
 	}
 
@@ -757,7 +783,7 @@ Consider using :scope="${traversal.join(".")}" instead
 				applyValueToDom(subtree, subData);
 			}
 
-			for(const { attribute, path } of attrPaths) {
+			for(const { attribute, path, template } of attrPaths) {
 				const { subtree, subData, traversed, untraversed } =
 					traverseToPath(root, curTree, curData, curPath, path);
 
@@ -766,7 +792,7 @@ Consider using :scope="${traversal.join(".")}" instead
 
 				elem.removeAttribute(`${attribute}.`);
 
-				subtree.elements.push({ element: elem, attribute })
+				subtree.elements.push({ element: elem, attribute, template });
 				if(subtree.proxy == null) {
 					const isObject = (subData && typeof subData === "object");
 					if(isObject) subtree.proxy = createProxy(traversed, subData);
