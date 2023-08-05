@@ -388,7 +388,9 @@ function createArraySubtrees(elem, subtree, array, path, suffix) {
 	const placement = elem.parentNode.insertBefore(comment, elem);
 	elem.remove();
 
-	const pathAttr = [ ...elem.attributes ].find(attr => attr.name.charAt(0) == ".");
+	const pathAttr = [ ...elem.attributes ].find(attr =>
+		attr.name.charAt(0) == "." || (attr.name.charAt(0) == "$" && attr.name.charAt(1) == ".")
+	);
 	if(pathAttr) elem.removeAttribute(pathAttr.name);
 	elem.setAttribute(":scope", suffix.join("."));
 

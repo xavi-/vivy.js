@@ -644,6 +644,7 @@ runTest(
 
 <div id="attributes">
     <div id="attr" attr.=".attr" normal="okay"></div>
+    <div id="global" attr.="$.attr"></div>
     <div id="num" num.=".number"></div>
     <div id="bool" bool.=".boolean"></div>
     <div id="is-null" is-null.=".is_nullish"></div>
@@ -664,6 +665,7 @@ runTest(
     [
         { selector: "#attr", attr: "attr", expected: "hello" },
         { selector: "#attr", attr: "normal", expected: "okay" },
+        { selector: "#global", attr: "attr", expected: "hello" },
         { selector: "#num", attr: "num", expected: "52" },
         { selector: "#bool", attr: "bool", expected: "" },
         { selector: "#is-null", attr: "is-null", expected: null },
@@ -918,6 +920,24 @@ runTest(
             proxy.base = "??";
         },
         { selectAll: ".base", expected: [ "??", "??", "??" ] },
+    ]
+);
+</script>
+
+<div id="root-array">
+    <ul>
+        <li $.items[]></li>
+    </ul>
+</div>
+<script>
+runTest(
+    "#root-array",
+    { items: [ "a", "b", "c" ] },
+    [
+        { selectAll: "li", expected: [ "a", "b", "c" ] },
+
+        (proxy) => proxy.items.push("d"),
+        { selectAll: "li", expected: [ "a", "b", "c", "d" ] },
     ]
 );
 </script>
