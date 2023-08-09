@@ -507,6 +507,20 @@ runTest(
             input.dispatchEvent(new Event("input"));
         },
         { path: "individualB", expected: "doo" },
+
+        (_, elem) => {
+            let input = elem.querySelector("[name=individualA]");
+            input.checked = false;
+            input.dispatchEvent(new Event("input"));
+        },
+        { path: "individualA", expected: false },
+
+        (_, elem) => {
+            let input = elem.querySelector("[name=individualA]");
+            input.checked = true;
+            input.dispatchEvent(new Event("input"));
+        },
+        { path: "individualA", expected: true },
     ]
 );
 </script>

@@ -369,7 +369,7 @@ function createSyncer(root, path, elem) {
 	return _ => {
 		const siblings = node.elements.filter(elem => elem.element.type == "checkbox");
 		if(siblings.length === 1) {
-			const hasValue = !!elem.value;
+			const hasValue = !!elem.defaultValue;
 			syncer(elem.checked ? (hasValue ? elem.value : true) : (hasValue ? null : false));
 		} else {
 			const val = [];
