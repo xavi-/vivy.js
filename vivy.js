@@ -382,6 +382,7 @@ function createSyncer(root, path, elem) {
 }
 
 function createArraySubtrees(elem, subtree, array, path, suffix) {
+	if(array == null) array = [];
 	if(!Array.isArray(array)) console.warn(`Non-array found at $.${path.join(".")}:`, array, elem);
 
 	const comment = document.createComment("vivy:[]");
