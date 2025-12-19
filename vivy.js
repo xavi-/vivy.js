@@ -542,19 +542,6 @@ const vivy = (() => {
 		return insertedElements;
 	}
 
-	const templateUsageCount = new Map();
-	function throwOnExcessiveTemplateUsage(name) {
-		if (templateUsageCount.size == 0) setTimeout(() => templateUsageCount.clear(), 0);
-
-		const count = templateUsageCount.get(name) ?? 0;
-
-		if (count > 10_000) {
-			throw new Error(`Template "${name}" inserted >10_000 times (possible infinite loop)`);
-		}
-
-		templateUsageCount.set(name, count + 1);
-	}
-
 	function emptyTreeNode() {
 		return { proxy: null, elements: [], children: new Map() };
 	}
@@ -563,6 +550,19 @@ const vivy = (() => {
 		if (!elem) throw new Error("Null element passed in");
 
 		let treeRoot = null;
+
+		const templateUsageCount = new Map();
+		function throwOnExcessiveTemplateUsage(name) {
+			if (templateUsageCount.size === 0) setTimeout(() => templateUsageCount.clear(), 0);
+
+			const count = templateUsageCount.get(name) ?? 0;
+
+			if (count > 10_000) {
+				throw new Error(`Template "${name}" inserted >10_000 times (possible infinite loop)`);
+			}
+
+			templateUsageCount.set(name, count + 1);
+		}
 
 		const templates = findTemplates(elem);
 
