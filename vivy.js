@@ -4,13 +4,13 @@ const vivy = (() => {
 		for (const str of strings) {
 			rtn.push(str);
 
-		const escaped = values.shift()
-			?.replace(/&/g, "&amp;")
+			const val = values.shift();
+			const escaped = (val == null ? "" : `${val}`)
+				.replace(/&/g, "&amp;")
 				.replace(/</g, "&lt;")
 				.replace(/>/g, "&gt;")
 				.replace(/"/g, "&quot;")
-			.replace(/'/g, "&#39;")
-		;
+				.replace(/'/g, "&#39;");
 			rtn.push(escaped);
 		}
 
@@ -32,7 +32,7 @@ const vivy = (() => {
 				} else if (template) {
 					const rendered = renderAttrTemplate(template, data);
 					element.setAttribute(attribute, rendered);
-				} else if (typeof data == "boolean") {
+				} else if (typeof data === "boolean") {
 					if (data) element.setAttribute(attribute, "");
 					else element.removeAttribute(attribute);
 				} else if (Array.isArray(data)) {
@@ -50,9 +50,12 @@ const vivy = (() => {
 			}
 
 			if (elem.showIf) {
-			const { element, showIf: { negated, placement, hydrate } } = elem;
-			const showElem = ((negated ^ !!data) === 1);
-			const isShowing = (element.parentNode != null);
+				const {
+					element,
+					showIf: { negated, placement, hydrate },
+				} = elem;
+				const showElem = (negated ^ !!data) === 1;
+				const isShowing = element.parentNode != null;
 
 				if (showElem) {
 					hydrate();
@@ -72,24 +75,28 @@ const vivy = (() => {
 				element.addEventListener("input", syncer);
 
 				const tagName = element.tagName;
-				if (tagName == "INPUT" && element.type == "number") {
+				if (tagName === "INPUT" && element.type === "number") {
 					element.valueAsNumber = data;
-			} else if(tagName == "INPUT" && (
-				element.type.startsWith("date") ||
-				element.type == "month" || element.type == "week" || element.type == "time"
-			)) {
+				} else if (
+					tagName === "INPUT" &&
+					(element.type.startsWith("date") ||
+						element.type === "month" ||
+						element.type === "week" ||
+						element.type === "time")
+				) {
 					element.valueAsDate = data;
-				} else if (tagName == "INPUT" && element.type == "radio") {
-				element.checked = (`${data}` == element.value);
-				} else if (tagName == "INPUT" && element.type == "checkbox") {
-				element.checked = data != null && (
-					(data === true && element.value == "on") ||
-					`${data}` == element.value || data.includes?.(element.value)
-				);
-				} else if (tagName == "INPUT" && element.type == "file") {
+				} else if (tagName === "INPUT" && element.type === "radio") {
+					element.checked = `${data}` === element.value;
+				} else if (tagName === "INPUT" && element.type === "checkbox") {
+					element.checked =
+						data != null &&
+						((data === true && element.value === "on") ||
+							`${data}` === element.value ||
+							data.includes?.(element.value));
+				} else if (tagName === "INPUT" && element.type === "file") {
 					// skip unless null -- file inputs are read-only
 					if (data == null) element.value = null;
-				} else if (tagName == "SELECT" && element.multiple) {
+				} else if (tagName === "SELECT" && element.multiple) {
 					if (data && data.length > 0) {
 						for (const option of element.options) {
 							option.selected = data.includes(option.value);
@@ -107,18 +114,23 @@ const vivy = (() => {
 					if (tree.children.size > 0 && document.contains(element))
 						console.warn(`Hydration failure: null found at $.${scope.join(".")}`, element);
 
-				if(element.children.length <= 0) { // No child elements
-					element.childNodes.forEach(node => {
+					if (element.children.length <= 0) {
+						// No child elements
+						element.childNodes.forEach((node) => {
 							// Vivy inserts comments to track where :show-if and array elements go
 							if (node.nodeType === Node.TEXT_NODE) node.remove();
 						});
 					}
 				} else if (isPrimitive) {
 					const childCount = element.children.length;
-				if(childCount === 0) { element.textContent = `${data}`; }
-				else if(tree.children.size > 0) { // Edge case: object val replaced with primitive
-					console.warn(`Expected object at $.${scope.join(".")}: ` +
-						`found "${data}" which overrides ${childCount} child elements`, element
+					if (childCount === 0) {
+						element.textContent = `${data}`;
+					} else if (tree.children.size > 0) {
+						// Edge case: object val replaced with primitive
+						console.warn(
+							`Expected object at $.${scope.join(".")}: ` +
+								`found "${data}" which overrides ${childCount} child elements`,
+							element,
 						);
 						if (!tree.originalChildElements) {
 							tree.originalChildElements = Array.from(element.children);
@@ -126,16 +138,17 @@ const vivy = (() => {
 
 						element.textContent = `${data}`;
 					} else if (!tree.hydrating) {
-					const path = "$." + scope.join(".")
+						const path = `$.${scope.join(".")}`;
 						const anyReferencedChildren = tree.elements.some(
-						el => el.element !== element && element.contains(el.element)
+							(el) => el.element !== element && element.contains(el.element),
 						);
 
 						if (anyReferencedChildren) {
 							// skip -- `data` value is not used by any children
 						} else if (childCount === 0) {
 							console.warn(`Value "${data}" from ${path} is unused`);
-					} else { // `data` value is not used by any children
+						} else {
+							// `data` value is not used by any children
 							console.warn(`Value "${data}" from ${path} removed ${childCount} elements`);
 							element.textContent = `${data}`;
 						}
@@ -156,9 +169,10 @@ const vivy = (() => {
 	function gatherElements(tree) {
 		const rtn = [];
 
-	let node, nodes = [ tree ];
+		let node;
+		const nodes = [tree];
 		while ((node = nodes.pop())) {
-		if(node.elements) rtn.push(...node.elements.map(e => e.element));
+			if (node.elements) rtn.push(...node.elements.map((e) => e.element));
 			else nodes.push(...node.children.values());
 		}
 
@@ -168,7 +182,7 @@ const vivy = (() => {
 	function adjustArrayTree(subtree, dataRoot, arrData, path, hydrate) {
 		const arr = Array.from(arrData ?? []);
 		const children = subtree.children;
-	const subtreeSize = [ ...children.keys() ].filter(key => /\d+/.test(key)).length;
+		const subtreeSize = [...children.keys()].filter((key) => /\d+/.test(key)).length;
 
 		const toUpdated = [];
 
@@ -177,14 +191,15 @@ const vivy = (() => {
 		}
 
 		if (subtreeSize > arr.length) {
-		const toRemoveProps = [], toRemoveElems = [];
+			const toRemoveProps = [],
+				toRemoveElems = [];
 			for (let idx = arr.length; idx < subtreeSize; idx++) {
 				const prop = idx.toString();
 				toRemoveProps.push(prop);
 				toRemoveElems.push(...gatherElements(children.get(prop)));
 			}
 
-		toUpdated.push(...toRemoveProps.map(prop => [ prop, children.get(prop) ]));
+			toUpdated.push(...toRemoveProps.map((prop) => [prop, children.get(prop)]));
 
 			for (const elem of toRemoveElems) elem.remove();
 			for (const idx of toRemoveProps) children.delete(idx);
@@ -193,7 +208,7 @@ const vivy = (() => {
 				const prop = idx.toString();
 				const curPath = [...path, prop];
 
-			const elements = []
+				const elements = [];
 				for (const { placement, element } of subtree.templates) {
 					const elem = element.cloneNode(true);
 
@@ -218,15 +233,16 @@ const vivy = (() => {
 
 	function updateDom(subtree, rootData, data, path, hydrate) {
 		// queueDomUpdate(tree, data);
-	let node, nodes = [ [ subtree, data, path ] ];
+		let node;
+		const nodes = [[subtree, data, path]];
 		while ((node = nodes.pop())) {
 			const [subtree, data, path] = node;
 
 			const isArray = !!subtree.templates;
 			if (isArray) {
-			const toUpdate = adjustArrayTree(subtree, rootData, data, path, hydrate)
-				.map(([ prop, child ]) => [ child, data?.[prop], [ ...path, prop ] ])
-			;
+				const toUpdate = adjustArrayTree(subtree, rootData, data, path, hydrate).map(
+					([prop, child]) => [child, data?.[prop], [...path, prop]],
+				);
 				nodes.push(...toUpdate);
 			} else {
 				applyValueToDom(subtree, data);
@@ -239,45 +255,56 @@ const vivy = (() => {
 	}
 
 	function toParts(path) {
-	return path?.split(/(?:\.|(?=\[]))/g).filter(p => p.length > 0) ?? [];
+		return path?.split(/(?:\.|(?=\[]))/g).filter((p) => p.length > 0) ?? [];
 	}
 	function parseAttributesToPaths(elem) {
-	let scopePath = null, assignToPath = null, showIfPath = null;
-	const attrPaths = [], eventPaths = [];
+		let scopePath = null,
+			assignToPath = null,
+			showIfPath = null;
+		const attrPaths = [],
+			eventPaths = [];
 
 		const attrs = elem.attributes;
 		for (const attr of attrs) {
-		const name = attr.name, value = attr.value;
+			const name = attr.name,
+				value = attr.value;
 
-		if ((
-			name == ":scope" || name.charAt(0) == "." ||
-			(name.charAt(0) == "$" && name.charAt(1) == ".")
-		) && name.at(-1) != "?") {
+			if (
+				(name === ":scope" ||
+					name.charAt(0) === "." ||
+					(name.charAt(0) === "$" && name.charAt(1) === ".")) &&
+				name.at(-1) !== "?"
+			) {
 				if (scopePath) console.warn(`Multiple scope paths found on element: ${attr}`, elem);
-				else scopePath = toParts(name == ":scope" ? value : name);
-			} else if (name.charAt(0) == "@") {
+				else scopePath = toParts(name === ":scope" ? value : name);
+			} else if (name.charAt(0) === "@") {
 				eventPaths.push({ event: name.substr(1), path: toParts(value) });
-			} else if (name.charAt(0) == "!" || name.at(-1) == "?") {
-				const negated = name.charAt(0) == "!";
-			const start = (negated ? 1 : 0), end = (name.at(-1) == "?" ? -1 : name.length);
+			} else if (name.charAt(0) === "!" || name.at(-1) === "?") {
+				const negated = name.charAt(0) === "!";
+				const start = negated ? 1 : 0,
+					end = name.at(-1) === "?" ? -1 : name.length;
 				showIfPath = { negated, path: toParts(name.slice(start, end)), attr: name };
-			} else if (name.charAt(name.length - 1) == ".") {
-			const template = (value[0] === "`" ? value.slice(1, -1) : null);
-			const path = (value[0] === "`" ? [] : toParts(value));
+			} else if (name.charAt(name.length - 1) === ".") {
+				const template = value[0] === "`" ? value.slice(1, -1) : null;
+				const path = value[0] === "`" ? [] : toParts(value);
 				attrPaths.push({ attribute: name.slice(0, -1), template, path });
 			}
 		}
 
 		const tagName = elem.tagName;
-	const isInput = (tagName == "INPUT" || tagName == "SELECT" || tagName == "TEXTAREA");
+		const isInput = tagName === "INPUT" || tagName === "SELECT" || tagName === "TEXTAREA";
 		if (!isInput && attrs[":assign-to"]?.value) {
 			console.warn(`Assign-to path found on non-input element`, elem);
 		} else if (isInput) {
-		if(attrs[":assign-to"]?.value) { assignToPath = toParts(attrs[":assign-to"].value); }
-		else if(scopePath != null) { assignToPath = scopePath; scopePath = null; }
-		else if(attrs["name"]?.value) { assignToPath = toParts(attrs["name"].value); }
-		else {
-			const attrIdx = attrPaths.findIndex(a => a.attribute == "value");
+			if (attrs[":assign-to"]?.value) {
+				assignToPath = toParts(attrs[":assign-to"].value);
+			} else if (scopePath != null) {
+				assignToPath = scopePath;
+				scopePath = null;
+			} else if (attrs["name"]?.value) {
+				assignToPath = toParts(attrs["name"].value);
+			} else {
+				const attrIdx = attrPaths.findIndex((a) => a.attribute === "value");
 				if (attrIdx > -1) {
 					assignToPath = attrPaths[attrIdx].path;
 					attrPaths.splice(attrIdx, 1);
@@ -289,8 +316,9 @@ const vivy = (() => {
 			if (showIfPath) console.warn(`Multiple show-if specifier found`, elem);
 
 			const value = attrs[":show-if"].value;
-			const negated = value.charAt(0) == "!";
-		const start = (negated ? 1 : 0), end = (value.at(-1) == "?" ? -1 : value.length);
+			const negated = value.charAt(0) === "!";
+			const start = negated ? 1 : 0,
+				end = value.at(-1) === "?" ? -1 : value.length;
 			showIfPath = { negated, path: toParts(value.slice(start, end)), attr: ":show-if" };
 		}
 
@@ -320,40 +348,42 @@ const vivy = (() => {
 	}
 
 	function createSyncer(root, path, elem) {
-	const tagName = elem.tagName
-		if (tagName != "INPUT" && tagName != "SELECT" && tagName != "TEXTAREA") return null;
+		const tagName = elem.tagName;
+		if (tagName !== "INPUT" && tagName !== "SELECT" && tagName !== "TEXTAREA") return null;
 
 		let syncer;
 		if (path.length === 0) syncer = (val) => root.proxy(val);
 		else {
 			const prop = path[path.length - 1];
 			const node = getNode(root, path.slice(0, -1));
-		syncer = (val => node.proxy[prop] = val);
+			syncer = (val) => (node.proxy[prop] = val);
 		}
 
-		if (elem.type == "number") {
-		return event => syncer(event.target.valueAsNumber);
+		if (elem.type === "number") {
+			return (event) => syncer(event.target.valueAsNumber);
 		}
 
 		if (
 			elem.type.startsWith("date") ||
-		elem.type == "month" || elem.type == "week" || elem.type == "time"
+			elem.type === "month" ||
+			elem.type === "week" ||
+			elem.type === "time"
 		) {
-		return event => syncer(event.target.valueAsDate);
+			return (event) => syncer(event.target.valueAsDate);
 		}
 
-		if (elem.type == "file") {
-		return event => syncer([ ...event.target.files ]);
+		if (elem.type === "file") {
+			return (event) => syncer([...event.target.files]);
 		}
 
 		// text, email, password, etc... inputs
-		if (elem.type != "checkbox" && !elem.multiple) {
-		return event => syncer(event.target.value);
+		if (elem.type !== "checkbox" && !elem.multiple) {
+			return (event) => syncer(event.target.value);
 		}
 
 		// checkboxes and multi-selects are special
 		if (elem.multiple) {
-		return event => {
+			return (event) => {
 				const val = [];
 
 				for (const option of event.target.selectedOptions) {
@@ -361,16 +391,16 @@ const vivy = (() => {
 				}
 
 				syncer(val);
-		}
+			};
 		}
 
 		// checkboxes
 		const node = getNode(root, path);
-	return _ => {
-		const siblings = node.elements.filter(elem => elem.element.type == "checkbox");
+		return (_) => {
+			const siblings = node.elements.filter((elem) => elem.element.type === "checkbox");
 			if (siblings.length === 1) {
 				const hasValue = !!elem.defaultValue;
-			syncer(elem.checked ? (hasValue ? elem.value : true) : (hasValue ? null : false));
+				syncer(elem.checked ? (hasValue ? elem.value : true) : hasValue ? null : false);
 			} else {
 				const val = [];
 				for (const { element } of siblings) {
@@ -378,7 +408,7 @@ const vivy = (() => {
 				}
 				syncer(val);
 			}
-	}
+		};
 	}
 
 	function createArraySubtrees(elem, subtree, array, path, suffix) {
@@ -389,8 +419,9 @@ const vivy = (() => {
 		const placement = elem.parentNode.insertBefore(comment, elem);
 		elem.remove();
 
-	const pathAttr = [ ...elem.attributes ].find(attr =>
-		attr.name.charAt(0) == "." || (attr.name.charAt(0) == "$" && attr.name.charAt(1) == ".")
+		const pathAttr = [...elem.attributes].find(
+			(attr) =>
+				attr.name.charAt(0) === "." || (attr.name.charAt(0) === "$" && attr.name.charAt(1) === "."),
 		);
 		if (pathAttr) elem.removeAttribute(pathAttr.name);
 		elem.setAttribute(":scope", suffix.join("."));
@@ -399,9 +430,10 @@ const vivy = (() => {
 		subtree.templates ??= [];
 		subtree.templates.push({ placement, element: elem });
 
-	const rtn = [], fragment = document.createDocumentFragment();
+		const rtn = [],
+			fragment = document.createDocumentFragment();
 		for (const [idx, datum] of Array.from(array ?? []).entries()) {
-		const prop = idx.toString()
+			const prop = idx.toString();
 
 			if (!subtree.children.has(prop)) {
 				const child = { proxy: null, elements: [], children: new Map() };
@@ -425,7 +457,7 @@ const vivy = (() => {
 
 		let elem;
 		while ((elem = elems.pop())) {
-			if (elem.tagName == "VIVY:TEMPLATE") {
+			if (elem.tagName === "VIVY:TEMPLATE") {
 				const name = elem.getAttribute("name");
 
 				if (!name) throw new Error(`Template missing name attribute: ${elem}`);
@@ -449,7 +481,7 @@ const vivy = (() => {
 				cloned.removeAttribute(":scope");
 				for (const attr of cloned.attributes) {
 					const name = attr.name;
-					if ((name.charAt(0) == "." || name.charAt(0) == "$") && name.at(-1) != "?") {
+					if ((name.charAt(0) === "." || name.charAt(0) === "$") && name.at(-1) !== "?") {
 						cloned.removeAttribute(name);
 					}
 				}
@@ -464,7 +496,7 @@ const vivy = (() => {
 
 	function insertTemplate(placement, template, scopePath, showIfPath) {
 		let clone = template.cloneNode(true);
-	let isFragment = (clone.nodeType == Node.DOCUMENT_FRAGMENT_NODE);
+		let isFragment = clone.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
 
 		if (scopePath?.length > 0) {
 			if (isFragment) {
@@ -478,21 +510,23 @@ const vivy = (() => {
 			}
 		}
 
-	const existing = (isFragment ? {} : parseAttributesToPaths(clone));
+		const existing = isFragment ? {} : parseAttributesToPaths(clone);
 		if (scopePath?.length > 0) {
 			const templateScope = [...scopePath];
 			if (existing.scopePath) {
-				clone.removeAttribute("." + existing.scopePath.join("."));
+				clone.removeAttribute(`.${existing.scopePath.join(".")}`);
 				templateScope.push(...existing.scopePath);
 			}
 
-			clone.setAttribute(":scope", "." + templateScope.join("."));
+			clone.setAttribute(":scope", `.${templateScope.join(".")}`);
 		}
 		if (showIfPath != null) {
 			if (existing.showIf) {
 				console.warn(
 					"Warning: two show-if attributes found on template",
-				clone, existing.showIf.path, showIfPath
+					clone,
+					existing.showIf.path,
+					showIfPath,
 				);
 			}
 
@@ -500,7 +534,7 @@ const vivy = (() => {
 			clone.setAttribute(":show-if", (negate ? "!" : ".") + path.join("."));
 		}
 
-	const insertedElements = (isFragment ? Array.from(clone.children) : [ clone ]);
+		const insertedElements = isFragment ? Array.from(clone.children) : [clone];
 
 		placement.parentNode.insertBefore(clone, placement);
 		placement.remove();
@@ -546,19 +580,21 @@ const vivy = (() => {
 				updateDom(node, rootData, value, path, hydrate);
 
 				return node.proxy;
-		}
+			};
 
 			const target = updateSelf;
 			// Can't override name or length on functions
 			for (const [key, val] of Object.entries(initValue ?? {})) {
-			if(key != "name" && key != "length") { target[key] = val; }
+				if (key !== "name" && key !== "length") {
+					target[key] = val;
+				}
 			}
 			const proxy = new Proxy(target, {
 				get(_, prop) {
 					const value = getValue(rootData, path);
 					if (value == null) console.warn(`Read property of ${value} (reading '${prop}')`);
 
-					if (prop == "toJSON") return value?.toJSON ?? (() => value);
+					if (prop === "toJSON") return value?.toJSON ?? (() => value);
 
 					let rtn = getNode(treeRoot, [...path, prop])?.proxy;
 					if (rtn != null && value?.[prop] != null) return rtn;
@@ -595,7 +631,7 @@ const vivy = (() => {
 							populateProxySubtree([...path, prop], valNode, value);
 						}
 					} else if (parent.length !== prevLength && node.children.has("length")) {
-					_updateDom(node.children.get("length"), "length", value)
+						_updateDom(node.children.get("length"), "length", value);
 					}
 
 					// Here to update element's attributes
@@ -618,11 +654,15 @@ const vivy = (() => {
 
 					return rtn;
 				},
-			ownKeys() { return Reflect.ownKeys(getValue(rootData, path)); },
-			has(_, key) { return Reflect.has(getValue(rootData, path), key); },
+				ownKeys() {
+					return Reflect.ownKeys(getValue(rootData, path));
+				},
+				has(_, key) {
+					return Reflect.has(getValue(rootData, path), key);
+				},
 				getOwnPropertyDescriptor(_, key) {
 					return Reflect.getOwnPropertyDescriptor(getValue(rootData, path), key);
-			}
+				},
 			});
 
 			return proxy;
@@ -633,7 +673,7 @@ const vivy = (() => {
 
 			let node;
 			while ((node = nodes.pop())) {
-				let [path, subtree, value] = node;
+				const [path, subtree, value] = node;
 
 				if (value == null) continue;
 				if (subtree.children.size <= 0) continue;
@@ -649,7 +689,7 @@ const vivy = (() => {
 		const createEventHandler = (elem, handlerPath, contextPath) => {
 			return (event) => {
 				const handler = getValue(rootData, handlerPath);
-			let context = getNode(treeRoot, contextPath).proxy
+				let context = getNode(treeRoot, contextPath).proxy;
 				context ??= getNode(treeRoot, contextPath.slice(0, -1)).proxy;
 
 				if (handler instanceof Function) {
@@ -662,9 +702,12 @@ const vivy = (() => {
 		};
 
 		const traverseToPath = (root, tree, data, path, traversal) => {
-		let subtree = tree, subData = data, traversed = [ ...path ], idx = 0;
+			let subtree = tree,
+				subData = data,
+				traversed = [...path],
+				idx = 0;
 
-			if (traversal[0] == "$") {
+			if (traversal[0] === "$") {
 				subtree = root;
 				subData = rootData;
 				traversed = [];
@@ -676,7 +719,7 @@ const vivy = (() => {
 					subtree.proxy = createProxy(traversed, subData);
 				}
 
-				if (part == "[]") break;
+				if (part === "[]") break;
 
 				if (!subtree.children.has(part)) {
 					const child = { proxy: null, elements: [], children: new Map() };
@@ -687,7 +730,7 @@ const vivy = (() => {
 				traversed = [...traversed, part];
 
 				if (subData && typeof subData === "object" && !(part in subData)) {
-				const nearMiss = Object.keys(subData).find(key => key.toLowerCase() == part);
+					const nearMiss = Object.keys(subData).find((key) => key.toLowerCase() === part);
 					if (nearMiss != null) {
 						console.warn(`!!!
 Near miss found -- "${part}" (html attribute) vs "${nearMiss}" (data property)
@@ -712,13 +755,13 @@ Consider using :scope="${traversal.join(".")}" instead
 
 			const initialData = getValue(dataRoot, path);
 			const initialNode = getNode(root, path) ?? hydrateRoot;
-		let node, nodes = elements.map(elem => [ elem, initialNode, initialData, path ])
+			let node,
+				nodes = elements.map((elem) => [elem, initialNode, initialData, path]);
 			while ((node = nodes.shift())) {
 				const [elem, tree, data, path] = node;
 
-			const {
-				scopePath, assignToPath, showIfPath, attrPaths, eventPaths
-			} = parseAttributesToPaths(elem);
+				const { scopePath, assignToPath, showIfPath, attrPaths, eventPaths } =
+					parseAttributesToPaths(elem);
 
 				if (elem.tagName.startsWith("T:") || elem.tagName.startsWith("TEMPLATE:")) {
 					const name = elem.tagName.split(":")[1].toLowerCase();
@@ -728,7 +771,7 @@ Consider using :scope="${traversal.join(".")}" instead
 					const template = templates.get(name);
 					const insertedElems = insertTemplate(elem, template, scopePath, showIfPath);
 
-				nodes.unshift(...insertedElems.map(elem => [ elem, tree, data, path ]));
+					nodes.unshift(...insertedElems.map((elem) => [elem, tree, data, path]));
 
 					continue;
 				}
@@ -740,7 +783,8 @@ Consider using :scope="${traversal.join(".")}" instead
 				const curPath = scopeTraversal?.traversed ?? path;
 				const untraversed = scopeTraversal?.untraversed ?? [];
 
-			if(untraversed[0] == "[]") { // Found array path, short-circuit
+				if (untraversed[0] === "[]") {
+					// Found array path, short-circuit
 					const suffix = untraversed.slice(1);
 					const trees = createArraySubtrees(elem, curTree, curData, curPath, suffix);
 
@@ -749,8 +793,13 @@ Consider using :scope="${traversal.join(".")}" instead
 				}
 
 				if (showIfPath) {
-				const { subtree, subData, untraversed } =
-					traverseToPath(root, curTree, curData, curPath, showIfPath.path);
+					const { subtree, subData, untraversed } = traverseToPath(
+						root,
+						curTree,
+						curData,
+						curPath,
+						showIfPath.path,
+					);
 
 					if (untraversed.length !== 0) throw new Error(`Can't show-if an array, ${elem}`);
 
@@ -762,7 +811,9 @@ Consider using :scope="${traversal.join(".")}" instead
 
 					let isHydrated = false;
 					const params = {
-					negated, placement, hydrate: () => {
+						negated,
+						placement,
+						hydrate: () => {
 							if (isHydrated) return;
 							isHydrated = true;
 
@@ -776,8 +827,13 @@ Consider using :scope="${traversal.join(".")}" instead
 				}
 
 				if (assignToPath) {
-				const { subtree, subData, traversed, untraversed } =
-					traverseToPath(root, curTree, curData, curPath, assignToPath);
+					const { subtree, subData, traversed, untraversed } = traverseToPath(
+						root,
+						curTree,
+						curData,
+						curPath,
+						assignToPath,
+					);
 
 					if (untraversed.length !== 0) throw new Error(`Can't assign-to an array, ${elem}`);
 
@@ -787,8 +843,13 @@ Consider using :scope="${traversal.join(".")}" instead
 				}
 
 				for (const { attribute, path, template } of attrPaths) {
-				const { subtree, subData, traversed, untraversed } =
-					traverseToPath(root, curTree, curData, curPath, path);
+					const { subtree, subData, traversed, untraversed } = traverseToPath(
+						root,
+						curTree,
+						curData,
+						curPath,
+						path,
+					);
 
 					if (untraversed.length !== 0)
 						throw new Error(`Attribute path can't reference arrays, ${elem}`);
@@ -797,7 +858,7 @@ Consider using :scope="${traversal.join(".")}" instead
 
 					subtree.elements.push({ element: elem, attribute, template });
 					if (subtree.proxy == null) {
-					const isObject = (subData && typeof subData === "object");
+						const isObject = subData && typeof subData === "object";
 						if (isObject) subtree.proxy = createProxy(traversed, subData);
 					}
 
@@ -805,35 +866,41 @@ Consider using :scope="${traversal.join(".")}" instead
 				}
 
 				for (const { event, path } of eventPaths) {
-				const { subtree, subData, traversed, untraversed } =
-					traverseToPath(root, curTree, curData, curPath, path);
+					const { subtree, subData, traversed, untraversed } = traverseToPath(
+						root,
+						curTree,
+						curData,
+						curPath,
+						path,
+					);
 
 					if (untraversed.length !== 0)
 						throw new Error(`Event handler path can't reference arrays, ${elem}`);
 					if (!(subData instanceof Function))
 						console.warn(
 							`Non-function found for event handler at $.${traversed.join(".")}:`,
-						subData, elem
+							subData,
+							elem,
 						);
 
 					elem.removeAttribute(`@${event}`);
 
-				const contextPath = (path[0] == "$" ? curPath : traversed.slice(0, -1));
+					const contextPath = path[0] === "$" ? curPath : traversed.slice(0, -1);
 					const handler = createEventHandler(elem, traversed, contextPath);
-				subtree.elements.push({ element: elem, event, handler })
+					subtree.elements.push({ element: elem, event, handler });
 					applyValueToDom(subtree, subData);
 				}
 
 				if (!scopePath) {
 					const children = Array.from(elem.children);
-				nodes.push(...children.map(child => [ child, tree, data, path ]));
+					nodes.push(...children.map((child) => [child, tree, data, path]));
 				} else {
 					const { subtree, subData, traversed } = scopeTraversal;
 
 					const children = Array.from(elem.children);
-				nodes.push(...children.map(child => [ child, subtree, subData, traversed ]));
+					nodes.push(...children.map((child) => [child, subtree, subData, traversed]));
 
-				const isObject = (subData && typeof subData === "object");
+					const isObject = subData && typeof subData === "object";
 					if (isObject && elem.children.length === 0 && subtree.children.length === 0) {
 						console.warn("Object never used?", elem, traversed);
 					}
@@ -843,7 +910,7 @@ Consider using :scope="${traversal.join(".")}" instead
 
 					subtree.hydrating = true;
 					applyValueToDom(subtree, subData);
-				subtree.hydrating = false;;
+					subtree.hydrating = false;
 				}
 			}
 
@@ -854,7 +921,9 @@ Consider using :scope="${traversal.join(".")}" instead
 		initialNode.elements.push({ element: elem, scope: [] });
 
 		treeRoot = hydrate([elem], rootData, initialNode, []);
-	if(!treeRoot.proxy) { treeRoot.proxy = createProxy([], rootData); }
+		if (!treeRoot.proxy) {
+			treeRoot.proxy = createProxy([], rootData);
+		}
 		treeRoot.proxy(rootData); // Here to make sure DOM is completely synced with data
 
 		window.tree = treeRoot;
