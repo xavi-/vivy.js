@@ -431,5 +431,27 @@
 	});
 	</script>
 
+	<!-- Delete Property Parent Sync -->
+	<div id="delete-attr-sync" class="test-case">
+		<h3>18. Delete Property doesn't update parent attributes</h3>
+		<div class="target" .user title.="`Name: ${_?.name}`"></div>
+	</div>
+	<script>
+	runTest("Delete Property Parent Sync", async () => {
+		const el = document.getElementById('delete-attr-sync');
+		const app = vivy(el, { user: { name: "John" } });
+
+		const target = el.querySelector('.target');
+
+		assert(target.getAttribute('title') === "Name: John", `Init: ${target.getAttribute('title')}`);
+
+		delete app.user.name;
+
+		assert(target.getAttribute('title') === "Name: ", `After Delete: ${target.getAttribute('title')}`);
+
+		return el;
+	});
+	</script>
+
 </body>
 </html>

@@ -214,5 +214,33 @@
 	});
 	</script>
 
+	<!-- Same Object, Different Paths -->
+	<div id="same-obj-diff-paths" class="test-case">
+		<h3>7. Same Object, Different Paths</h3>
+		<span class="a-name" .a.name></span>
+		<span class="b-name" .b.name></span>
+	</div>
+	<script>
+	runTest("Same Object, Different Paths", async () => {
+		const el = document.getElementById('same-obj-diff-paths');
+		const obj = { name: "initial" };
+		const app = vivy(el, { a: obj, b: obj });
+
+		const aName = el.querySelector('.a-name');
+		const bName = el.querySelector('.b-name');
+
+		assert(aName.textContent === "initial", `Init A: ${aName.textContent}`);
+		assert(bName.textContent === "initial", `Init B: ${bName.textContent}`);
+
+		// Update via A
+		app.a.name = "updated";
+
+		assert(aName.textContent === "updated", `Update A: ${aName.textContent}`);
+		// This is EXPECTED TO FAIL if my theory is correct
+		assert(bName.textContent === "updated", `Update B (via shared obj): ${bName.textContent}`);
+
+		return el;
+	});
+	</script>
 </body>
 </html>

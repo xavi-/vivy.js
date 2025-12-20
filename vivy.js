@@ -565,10 +565,18 @@ const vivy = (() => {
 		}
 
 		const templates = findTemplates(elem);
+		const dataToNodes = new WeakMap();
+		const registerNode = (data, node, path) => {
+			if (data == null || typeof data !== "object") return;
+			let nodes = dataToNodes.get(data);
+			if (!nodes) {
+				nodes = new Set();
+				dataToNodes.set(data, nodes);
+			}
+			nodes.add({ node, path });
+		};
 
 		const createProxy = (path, initValue) => {
-			const _updateDom = (node, prop, value) =>
-				updateDom(node, rootData, value, [...path, prop], hydrate);
 			const updateSelf = (value) => {
 				if (path.length <= 0) rootData = value;
 				else {
@@ -617,25 +625,40 @@ const vivy = (() => {
 					const prevLength = parent.length;
 					parent[prop] = value;
 
-					if (node.templates && parent.length !== prevLength) {
-						adjustArrayTree(node, rootData, parent, path, hydrate);
-						if (node.children.has("length")) {
-							_updateDom(node.children.get("length"), "length", parent.length);
-						}
-					} else if (node.children.has(prop)) {
-						const valNode = node.children.get(prop);
+					const nodesToUpdate = dataToNodes.get(parent) || [{ node, path }];
+					for (const { node: targetNode, path: targetPath } of nodesToUpdate) {
+						if (targetNode.templates && parent.length !== prevLength) {
+							adjustArrayTree(targetNode, rootData, parent, targetPath, hydrate);
+							if (targetNode.children.has("length")) {
+								updateDom(
+									targetNode.children.get("length"),
+									rootData,
+									parent.length,
+									[...targetPath, "length"],
+									hydrate,
+								);
+							}
+						} else if (targetNode.children.has(prop)) {
+							const valNode = targetNode.children.get(prop);
 
-						_updateDom(valNode, prop, value);
+							updateDom(valNode, rootData, value, [...targetPath, prop], hydrate);
 
-						if (valNode.proxy == null) {
-							populateProxySubtree([...path, prop], valNode, value);
+							if (valNode.proxy == null) {
+								populateProxySubtree([...targetPath, prop], valNode, value);
+							}
+						} else if (parent.length !== prevLength && targetNode.children.has("length")) {
+							updateDom(
+								targetNode.children.get("length"),
+								rootData,
+								value,
+								[...targetPath, "length"],
+								hydrate,
+							);
 						}
-					} else if (parent.length !== prevLength && node.children.has("length")) {
-						_updateDom(node.children.get("length"), "length", value);
+
+						// Here to update element's attributes
+						if (targetNode.elements) applyValueToDom(targetNode, parent);
 					}
-
-					// Here to update element's attributes
-					if (node.elements) applyValueToDom(node, parent);
 
 					return true;
 				},
@@ -647,9 +670,21 @@ const vivy = (() => {
 
 					if (!rtn) return false;
 
-					const node = getNode(treeRoot, path);
-					if (node.children.has(prop)) {
-						_updateDom(node.children.get(prop), prop, null);
+					const nodesToUpdate = dataToNodes.get(parent) || [
+						{ node: getNode(treeRoot, path), path },
+					];
+					for (const { node: targetNode, path: targetPath } of nodesToUpdate) {
+						if (targetNode.children.has(prop)) {
+							updateDom(
+								targetNode.children.get(prop),
+								rootData,
+								null,
+								[...targetPath, prop],
+								hydrate,
+							);
+						}
+
+						if (targetNode.elements) applyValueToDom(targetNode, parent);
 					}
 
 					return rtn;
@@ -740,6 +775,9 @@ Consider using :scope="${traversal.join(".")}" instead
 					}
 				}
 				subData = subData?.[part];
+				if (subData && typeof subData === "object") {
+					registerNode(subData, subtree, traversed);
+				}
 				idx += 1;
 			}
 			const untraversed = traversal.slice(idx);
@@ -782,6 +820,10 @@ Consider using :scope="${traversal.join(".")}" instead
 				const curData = scopeTraversal?.subData ?? data;
 				const curPath = scopeTraversal?.traversed ?? path;
 				const untraversed = scopeTraversal?.untraversed ?? [];
+
+				if (curData && typeof curData === "object") {
+					registerNode(curData, curTree, curPath);
+				}
 
 				if (untraversed[0] === "[]") {
 					// Found array path, short-circuit
