@@ -27,3 +27,27 @@ function assert(condition, message) {
 function wait(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+window.addEventListener("error", (e) => {
+	const message = [e.message, e.filename, e.lineno, e.colno, e.error?.stack]
+		.filter(Boolean)
+		.join("\n");
+
+	console.error(e);
+	document.body.style.backgroundColor = "#fff0f0";
+	document.body.insertAdjacentHTML(
+		"afterbegin",
+		`<div style="color:red; font-weight:bold; margin: 4px 0; display: block;">UNCAUGHT EXCEPTION: ${message}</div>`,
+	);
+});
+
+window.addEventListener("unhandledrejection", (e) => {
+	const message = [e.reason, e.promise, e.reason?.stack].filter(Boolean).join("\n");
+
+	console.error(e);
+	document.body.style.backgroundColor = "#fff0f0";
+	document.body.insertAdjacentHTML(
+		"afterbegin",
+		`<div style="color:red; font-weight:bold; margin: 4px 0; display: block;">UNHANDLED REJECTION: ${message}</div>`,
+	);
+});
