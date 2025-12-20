@@ -108,5 +108,50 @@
 	});
 	</script>
 
+	<!-- Event Handler Context -->
+	<div id="context-test" class="test-case">
+		<h3>4. Event Handler Context</h3>
+		<div .sub>
+			<button id="context-btn" @click=".handler">Context Button</button>
+			<button id="root-handler-btn" @click="$.rootHandler">Root Handler Button</button>
+		</div>
+	</div>
+	<script>
+	runTest("Event Handler Context", document.getElementById("context-test"), async (el) => {
+		const btn = el.querySelector("#context-btn");
+		const clickEvent = new Event("click");
+
+		const rootBtn = el.querySelector("#root-handler-btn");
+		const rootClickEvent = new Event("click");
+
+		let clicks = 0;
+
+		const app = vivy(el, {
+			sub: {
+				handler: function(event, context) {
+					assert(this === btn, "this should be the element");
+					assert(event === clickEvent, "event should be the event");
+					assert(context === app.sub, "context should be the context (parent object)");
+					clicks++;
+				}
+			},
+			rootHandler: function(event, context) {
+				assert(this === rootBtn, "root handler: this should be the element");
+				assert(event === rootClickEvent, "root handler: first argument should be the event");
+				assert(context === app.sub, "root handler: context should be the current scope (.sub)");
+				clicks++;
+			}
+		});
+
+		btn.dispatchEvent(clickEvent);
+		await wait(1);
+		assert(clicks === 1, `Clicks should be 1, found: ${clicks}`);
+
+		rootBtn.dispatchEvent(rootClickEvent);
+		await wait(1);
+		assert(clicks === 2, `Clicks should be 2, found: ${clicks}`);
+	});
+	</script>
+
 </body>
 </html>
