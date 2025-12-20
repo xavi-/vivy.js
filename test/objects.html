@@ -170,9 +170,73 @@
 	});
 	</script>
 
+	<!-- Multiple Text Bindings -->
+	<div id="multiple-text-bindings" class="test-case">
+		<h3>5. Multiple Text Bindings</h3>
+		<span class="t1-a" .message></span>
+		<div class="t1-b" .message></div>
+		<p class="t1-c" .message></p>
+	</div>
+	<script>
+	runTest("Multiple Text Bindings", document.getElementById("multiple-text-bindings"), async (el) => {
+		const app = vivy(el, { message: "Initial" });
+
+		const a = el.querySelector('.t1-a');
+		const b = el.querySelector('.t1-b');
+		const c = el.querySelector('.t1-c');
+
+		// Check initial
+		assert(a.textContent === "Initial", `Init A: ${a.textContent}`);
+		assert(b.textContent === "Initial", `Init B: ${b.textContent}`);
+		assert(c.textContent === "Initial", `Init C: ${c.textContent}`);
+
+		// Update
+		app.message = "Updated Value";
+
+		assert(a.textContent === "Updated Value", `Update A: ${a.textContent}`);
+		assert(b.textContent === "Updated Value", `Update B: ${b.textContent}`);
+		assert(c.textContent === "Updated Value", `Update C: ${c.textContent}`);
+	});
+	</script>
+
+	<!-- Nested Object Multi-Binding -->
+	<div id="nested-object-multi-binding" class="test-case">
+		<h3>6. Nested Object Multi-Binding</h3>
+		<span class="t3-first" .user.first></span>
+		<span class="t3-last" .user.last></span>
+		<div class="t3-full">
+			<span .user.first></span> <span .user.last></span>
+		</div>
+	</div>
+	<script>
+	runTest("Nested Object Multi-Binding", document.getElementById("nested-object-multi-binding"), async (el) => {
+		const app = vivy(el, { user: { first: "John", last: "Doe" } });
+
+		const first1 = el.querySelector('.t3-first');
+		const last1 = el.querySelector('.t3-last');
+		const first2 = el.querySelector('.t3-full span:nth-child(1)');
+
+		assert(first1.textContent === "John", "Init First1");
+		assert(first2.textContent === "John", "Init First2");
+
+		// Update deep property
+		app.user.first = "Jane";
+
+		assert(first1.textContent === "Jane", "Update First1");
+		assert(first2.textContent === "Jane", "Update First2");
+		assert(last1.textContent === "Doe", "Last should be unchanged");
+
+		// Replace entire object
+		app.user = { first: "Bob", last: "Smith" };
+
+		assert(first1.textContent === "Bob", "Replace First1");
+		assert(last1.textContent === "Smith", "Replace Last1");
+	});
+	</script>
+
 	<!-- Primitive to Object Upgrade -->
 	<div id="prim-to-obj" class="test-case">
-		<h3>5. Primitive to Object</h3>
+		<h3>7. Primitive to Object</h3>
 		<div .obj>
 			<span .name></span>
 		</div>
@@ -191,7 +255,7 @@
 
 	<!-- Null to Object Upgrade -->
 	<div id="null-to-obj" class="test-case">
-		<h3>6. Null to Object</h3>
+		<h3>8. Null to Object</h3>
 		<div .obj :show-if=".">
 			<span .name></span>
 		</div>
@@ -211,7 +275,7 @@
 
 	<!-- Null to Nested Object -->
 	<div id="null-to-nested-obj" class="test-case">
-		<h3>7. Null to Nested Object</h3>
+		<h3>9. Null to Nested Object</h3>
 		<div .obj :show-if=".">
 			<div .nested>
 				<span .name></span>
@@ -233,7 +297,7 @@
 
 	<!-- Same Object, Different Paths -->
 	<div id="same-obj-diff-paths" class="test-case">
-		<h3>8. Same Object, Different Paths</h3>
+		<h3>10. Same Object, Different Paths</h3>
 		<span class="a-name" .a.name></span>
 		<span class="b-name" .b.name></span>
 	</div>
@@ -259,7 +323,7 @@
 
 	<!-- Copying Object Check -->
 	<div id="move-object" class="test-case">
-		<h3>9. Copy Object Check</h3>
+		<h3>11. Copy Object Check</h3>
 		<div .a>
 			<span class="val" .val></span>
 		</div>

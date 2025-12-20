@@ -268,5 +268,48 @@
 		assert(span.textContent === "0", `Length after pop: ${span.textContent}`);
 	});
 	</script>
+
+	<!-- Multiple Lists -->
+	<div id="multiple-lists" class="test-case">
+		<h3>10. Multiple Lists (Same Source)</h3>
+		<ul class="list-a">
+			<li .tags[]></li>
+		</ul>
+		<div class="list-b">
+			<span .tags[]></span>
+		</div>
+	</div>
+	<script>
+	runTest("Multiple Lists", document.getElementById("multiple-lists"), async (el) => {
+		const app = vivy(el, { tags: ["a", "b"] });
+
+		const listA = el.querySelector('.list-a');
+		const listB = el.querySelector('.list-b');
+
+		assert(listA.children.length === 2, "Init ListA length");
+		assert(listB.children.length === 2, `Init ListB length (2 items + comment hidden)`);
+
+		const itemsA = listA.querySelectorAll('li');
+		const itemsB = listB.querySelectorAll('span');
+
+		assert(itemsA.length === 2, "Init ItemsA count");
+		assert(itemsB.length === 2, "Init ItemsB count");
+		assert(itemsA[0].textContent === "a", "Init ItemA[0]");
+		assert(itemsB[0].textContent === "a", "Init ItemB[0]");
+
+		// Push item
+		app.tags.push("c");
+
+		// Need to re-query as elements are dynamic
+		const newItemsA = listA.querySelectorAll('li');
+		const newItemsB = listB.querySelectorAll('span');
+
+		assert(newItemsA.length === 3, "Push ItemsA count");
+		assert(newItemsB.length === 3, "Push ItemsB count");
+		assert(newItemsA[2].textContent === "c", "Push ItemA[2]");
+		assert(newItemsB[2].textContent === "c", "Push ItemB[2]");
+	});
+	</script>
+
 </body>
 </html>
