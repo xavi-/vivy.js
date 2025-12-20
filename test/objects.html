@@ -11,9 +11,32 @@
 <body>
 	<h1>Object Binding Tests</h1>
 
-	<!-- Basic Nested -->
+	<!-- Basic Test -->
+	<div id="basic-test" class="test-case">
+		<h3>1. Basic Text</h3>
+		<div .basic></div>
+	</div>
+	<script>
+	runTest("Basic Text Binding", document.getElementById("basic-test"), async (el) => {
+		const app = vivy(el, { basic: "hi" });
+		const div = el.querySelector("div");
+
+		assert(div.textContent === "hi", `Init: ${div.textContent}`);
+
+		app.basic = "hello";
+		assert(div.textContent === "hello", `Update: ${div.textContent}`);
+
+		app(null);
+		assert(div.textContent === "", `Clear (null): ${div.textContent}`);
+
+		app({});
+		assert(div.textContent === "", `Clear (empty obj): ${div.textContent}`);
+	});
+	</script>
+
+	<!-- Nested Object -->
 	<div id="nested-test" class="test-case">
-		<h3>1. Nested Object</h3>
+		<h3>2. Nested Object</h3>
 		<section .section>
 			<h2 .title></h2>
 			<div id="independent">not affected</div>
@@ -78,7 +101,7 @@
 
 	<!-- Duplicate References -->
 	<div id="duplicates-test" class="test-case">
-		<h3>2. Duplicate References</h3>
+		<h3>3. Duplicate References</h3>
 		<div .a id="ref3"><div .b><div .c id="ref1"></div></div></div>
 		<div .a.b.c id="ref2"></div>
 	</div>
@@ -110,7 +133,7 @@
 
 	<!-- Root Reference -->
 	<div id="root-ref-test" class="test-case">
-		<h3>3. Root References</h3>
+		<h3>4. Root References</h3>
 		<div .obj>
 			<em .text></em>
 			<strong .$.text></strong>
@@ -149,7 +172,7 @@
 
 	<!-- Primitive to Object Upgrade -->
 	<div id="prim-to-obj" class="test-case">
-		<h3>4. Primitive to Object</h3>
+		<h3>5. Primitive to Object</h3>
 		<div .obj>
 			<span .name></span>
 		</div>
@@ -168,7 +191,7 @@
 
 	<!-- Null to Object Upgrade -->
 	<div id="null-to-obj" class="test-case">
-		<h3>5. Null to Object</h3>
+		<h3>6. Null to Object</h3>
 		<div .obj :show-if=".">
 			<span .name></span>
 		</div>
@@ -188,7 +211,7 @@
 
 	<!-- Null to Nested Object -->
 	<div id="null-to-nested-obj" class="test-case">
-		<h3>6. Null to Nested Object</h3>
+		<h3>7. Null to Nested Object</h3>
 		<div .obj :show-if=".">
 			<div .nested>
 				<span .name></span>
@@ -210,7 +233,7 @@
 
 	<!-- Same Object, Different Paths -->
 	<div id="same-obj-diff-paths" class="test-case">
-		<h3>7. Same Object, Different Paths</h3>
+		<h3>8. Same Object, Different Paths</h3>
 		<span class="a-name" .a.name></span>
 		<span class="b-name" .b.name></span>
 	</div>
@@ -236,7 +259,7 @@
 
 	<!-- Copying Object Check -->
 	<div id="move-object" class="test-case">
-		<h3>8. Copy Object Check</h3>
+		<h3>9. Copy Object Check</h3>
 		<div .a>
 			<span class="val" .val></span>
 		</div>

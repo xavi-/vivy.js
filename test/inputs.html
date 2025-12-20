@@ -9,11 +9,107 @@
 	</style>
 </head>
 <body>
-	<h1>Complex Input Tests</h1>
+	<h1>Input Tests</h1>
+
+	<!-- Basic Inputs -->
+	<div id="input-test" class="test-case">
+		<h3>1. Basic Inputs</h3>
+		<input .input id="input">
+		<input name="named" id="named">
+		<input id="value" value.=".value">
+		<textarea :assign-to=".assigned" id="assigned"></textarea>
+	</div>
+	<script>
+	runTest("Basic Inputs", document.getElementById("input-test"), async (el) => {
+		const app = vivy(el, {
+			input: "hi",
+			named: "hey",
+			value: "howdy",
+			assigned: "hello",
+		});
+
+		const input = el.querySelector("#input");
+		const named = el.querySelector("#named");
+		const value = el.querySelector("#value");
+		const assigned = el.querySelector("#assigned");
+
+		assert(input.value === "hi", "Init Input");
+		assert(named.value === "hey", "Init Named");
+		assert(value.value === "howdy", "Init Value");
+		assert(assigned.value === "hello", "Init Assigned");
+
+		// Model -> View
+		app.input = "ok";
+		assert(input.value === "ok", "Update Input");
+
+		// View -> Model
+		input.value = "poop";
+		input.dispatchEvent(new Event("input"));
+		assert(app.input === "poop", "View->Model Input");
+
+		named.value = "change";
+		named.dispatchEvent(new Event("input"));
+		assert(app.named === "change", "View->Model Named");
+	});
+	</script>
+
+	<!-- Input Radio -->
+	<div id="radio-test" class="test-case">
+		<h3>2. Input Radio</h3>
+		<label><input name="result" type="radio" value="fab"> fab</label>
+		<label><input name="result" type="radio" value="rab"> rab</label>
+	</div>
+	<script>
+	runTest("Input Radio", document.getElementById("radio-test"), async (el) => {
+		const app = vivy(el, { result: "rab" });
+
+		const fab = el.querySelector("[value=fab]");
+		const rab = el.querySelector("[value=rab]");
+
+		assert(rab.checked === true, "Init Rab Checked");
+		assert(fab.checked === false, "Init Fab Unchecked");
+
+		app.result = "fab";
+		assert(fab.checked === true, "Update Fab Checked");
+		assert(rab.checked === false, "Update Rab Unchecked");
+
+		rab.checked = true;
+		rab.dispatchEvent(new Event("input"));
+		assert(app.result === "rab", "View->Model Radio");
+	});
+	</script>
+
+	<!-- Non-String Inputs -->
+	<div id="types-test" class="test-case">
+		<h3>3. Typed Inputs</h3>
+		<input name="number" type="number">
+		<input name="date" type="date">
+	</div>
+	<script>
+	runTest("Typed Inputs", document.getElementById("types-test"), async (el) => {
+		// Date handling can be tricky with timezones, using simple ISO date
+		const app = vivy(el, { number: 18, date: new Date("1995-12-17") });
+
+		const numInput = el.querySelector("[name=number]");
+		const dateInput = el.querySelector("[name=date]");
+
+		assert(numInput.valueAsNumber === 18, "Init Number");
+		assert(dateInput.value === "1995-12-17", `Init Date: ${dateInput.value}`);
+
+		app.number = 28;
+		assert(numInput.valueAsNumber === 28, "Update Number");
+
+		numInput.valueAsNumber = 30;
+		numInput.dispatchEvent(new Event("input"));
+		assert(app.number === 30, "View->Model Number");
+	});
+	</script>
+
+
 
 	<!-- Input Complex (Table) -->
 	<div id="input-complex" class="test-case">
-		<h3>1. Complex Input (Table)</h3>
+		<h3>4. Complex Input (Table)</h3>
 		<table>
 			<tr .[]>
 				<td .[]>
@@ -43,7 +139,7 @@
 
 	<!-- Input Checkbox -->
 	<div id="input-checkbox" class="test-case">
-		<h3>2. Input Checkbox</h3>
+		<h3>5. Input Checkbox</h3>
 		<label><input name="groupA" type="checkbox" value="woo"> woo</label>
 		<label><input name="groupA" type="checkbox" value="poo"> poo</label>
 		<label><input name="groupA" type="checkbox" value="chew"> chew</label>
@@ -106,7 +202,7 @@
 
 	<!-- Input Select -->
 	<div id="input-select" class="test-case">
-		<h3>3. Input Select</h3>
+		<h3>6. Input Select</h3>
 		<select name="value">
 			<option .options[]></option>
 		</select>
@@ -133,7 +229,7 @@
 
 	<!-- Input Multi-Select -->
 	<div id="input-multiselect" class="test-case">
-		<h3>4. Input Multi-Select</h3>
+		<h3>7. Input Multi-Select</h3>
 		<select :assign-to="values" multiple>
 			<option .options[]></option>
 		</select>
@@ -161,7 +257,7 @@
 
 	<!-- Input Root Value -->
 	<div id="input-root-value" class="test-case">
-		<h3>5. Input Root Value</h3>
+		<h3>8. Input Root Value</h3>
 		<select . multiple>
 			<option>a</option>
 			<option>b</option>
@@ -186,7 +282,7 @@
 
 	<!-- File Input -->
 	<div id="file-input-test" class="test-case">
-		<h3>6. File Input Clearing</h3>
+		<h3>9. File Input Clearing</h3>
 		<input type="file" :assign-to="file">
 	</div>
 	<script>
@@ -205,7 +301,7 @@
 
 	<!-- Week Input -->
 	<div id="week-input-test" class="test-case">
-		<h3>7. Week Input</h3>
+		<h3>10. Week Input</h3>
 		<input type="week" :assign-to="week">
 	</div>
 	<script>
@@ -224,7 +320,7 @@
 
 	<!-- Date Inputs (Month/Time) -->
 	<div id="date-input-test" class="test-case">
-		<h3>8. Date Inputs (Month/Time)</h3>
+		<h3>11. Date Inputs (Month/Time)</h3>
 		<input type="month" :assign-to="month">
 		<input type="time" :assign-to="time">
 	</div>
@@ -250,7 +346,7 @@
 
 	<!-- Checkbox with Default Value -->
 	<div id="checkbox-default-test" class="test-case">
-		<h3>9. Checkbox with No Value (Default 'on')</h3>
+		<h3>12. Checkbox with No Value (Default 'on')</h3>
 		<input type="checkbox" name="toggle">
 	</div>
 	<script>
