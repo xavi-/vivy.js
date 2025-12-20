@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="../vivy.js"></script>
+	<script src="./test_utils.js"></script>
+	<style>
+		.test-case { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+	</style>
+</head>
+<body>
+	<h1>Object Binding Tests</h1>
+
+	<!-- Basic Nested -->
+	<div id="nested-test" class="test-case">
+		<h3>1. Nested Object</h3>
+		<section .section>
+			<h2 .title></h2>
+			<div id="independent">not affected</div>
+			<div>
+				<p .paragraph></p>
+			</div>
+		</section>
+		<div .deep.example1 id="deep1"></div>
+		<div .deep.example2 id="example2"><span .deeper id="deep2"></span></div>
+	</div>
+	<script>
+	runTest("Nested Object", async () => {
+		const el = document.getElementById("nested-test");
+		const app = vivy(el, {
+			section: {
+				title: "title",
+				paragraph: "I'm a deep paragraph",
+			},
+			deep: {
+				example1: "deep",
+				example2: { deeper: "deeper still" },
+			},
+		});
+
+		const h2 = el.querySelector("h2");
+		const p = el.querySelector("p");
+		const deep1 = el.querySelector("#deep1");
+		const deep2 = el.querySelector("#deep2");
+		const example2 = el.querySelector("#example2");
+		const independent = el.querySelector("#independent");
+
+		assert(independent.textContent === "not affected", "Init Independent");
+		assert(h2.textContent === "title", "Init H2");
+		assert(p.textContent === "I'm a deep paragraph", "Init P");
+		assert(deep1.textContent === "deep", "Init Deep1");
+		assert(deep2.textContent === "deeper still", "Init Deep2");
+
+		// Update
+		app.section.title = "title update";
+		assert(h2.textContent === "title update", "Update H2");
+
+		app.deep.example1 = "example1 update";
+		assert(deep1.textContent === "example1 update", "Update Deep1");
+
+		app.deep.example2.deeper = "example2 update";
+		assert(deep2.textContent === "example2 update", "Update Deep2");
+
+		// Object replacement
+		app.deep.example2 = "hi";
+		assert(example2.textContent === "hi", "Replace Obj with String");
+
+		// Restore
+		app.deep.example2 = { deeper: "back" };
+		assert(deep2.textContent === "back", "Restore Obj");
+
+		// Nullify
+		app.section = null;
+		assert(h2.textContent === "", "Nullify Section H2");
+		assert(p.textContent === "", "Nullify Section P");
+		assert(independent.textContent === "not affected", "Nullify Indep");
+	});
+	</script>
+
+	<!-- Duplicate References -->
+	<div id="duplicates-test" class="test-case">
+		<h3>2. Duplicate References</h3>
+		<div .a id="ref3"><div .b><div .c id="ref1"></div></div></div>
+		<div .a.b.c id="ref2"></div>
+	</div>
+	<script>
+	runTest("Duplicate References", async () => {
+		const el = document.getElementById("duplicates-test");
+		const app = vivy(el, { a: { b: { c: "abc" } } });
+
+		const ref1 = el.querySelector("#ref1");
+		const ref2 = el.querySelector("#ref2");
+		const ref3 = el.querySelector("#ref3");
+
+		assert(ref1.textContent === "abc", "Init Ref1");
+		assert(ref2.textContent === "abc", "Init Ref2");
+
+		app.a.b.c = "123";
+		assert(ref1.textContent === "123", "Update Ref1");
+		assert(ref2.textContent === "123", "Update Ref2");
+
+		app.a = "gone";
+		assert(ref2.textContent === "", "Replace A (Ref2 gone)");
+		assert(ref3.textContent === "gone", "Replace A (Ref3 val)");
+
+		app.a = { b: { c : "back" } };
+		assert(ref1.textContent === "back", "Restore A Ref1");
+		assert(ref2.textContent === "back", "Restore A Ref2");
+		assert(ref3.textContent === "back", "Restore A Ref3");
+	});
+	</script>
+
+	<!-- Root Reference -->
+	<div id="root-ref-test" class="test-case">
+		<h3>3. Root References</h3>
+		<div .obj>
+			<em .text></em>
+			<strong .$.text></strong>
+			<span $.text></span>
+			<button id="inner" @click="$.randomText">inner context</button>
+		</div>
+		<button id="outer" @click=".randomText">outer context</button>
+	</div>
+	<script>
+	runTest("Root References", async () => {
+		const el = document.getElementById("root-ref-test");
+		vivy(el, {
+			obj: { text: "hi" },
+			text: "hello",
+			randomText: (_, obj) => obj.text += " okay",
+		});
+
+		const em = el.querySelector("em");
+		const strong = el.querySelector("strong");
+		const span = el.querySelector("span");
+
+		assert(em.textContent === "hi", "Init Em");
+		assert(strong.textContent === "hello", "Init Strong");
+		assert(span.textContent === "hello", "Init Span");
+
+		// Event triggering root method
+		el.querySelector("#inner").dispatchEvent(new Event("click"));
+		// randomText appends " okay" to root.text
+		assert(em.textContent === "hi okay", "Event Em Updated");
+		assert(strong.textContent === "hello", "Event Strong Unchanged");
+		assert(span.textContent === "hello", "Event Span Unchanged");
+
+		el.querySelector("#outer").dispatchEvent(new Event("click"));
+		assert(strong.textContent === "hello okay", "Event 2 Strong Updated");
+	});
+	</script>
+
+	<!-- Primitive to Object Upgrade -->
+	<div id="prim-to-obj" class="test-case">
+		<h3>4. Primitive to Object</h3>
+		<div .obj>
+			<span .name></span>
+		</div>
+	</div>
+	<script>
+	runTest("Primitive to Object", async () => {
+		const el = document.getElementById("prim-to-obj");
+		const app = vivy(el, { obj: "name" });
+		const div = el.querySelector("div > div"); // .obj
+
+		assert(div.textContent === "name", "Init Primitive");
+
+		app.obj = { name: "NAME" };
+		assert(el.querySelector("span").textContent === "NAME", "Upgrade to Object");
+	});
+	</script>
+
+	<!-- Null to Object Upgrade -->
+	<div id="null-to-obj" class="test-case">
+		<h3>5. Null to Object</h3>
+		<div .obj :show-if=".">
+			<span .name></span>
+		</div>
+	</div>
+	<script>
+	runTest("Null to Object", async () => {
+		const el = document.getElementById("null-to-obj");
+		const app = vivy(el, {});
+
+		// .obj might be hidden
+		// In vivy, show-if usually hides/removes.
+
+		app.obj = { name: "NAME" };
+		const span = el.querySelector("span");
+		assert(span && span.textContent === "NAME", "Upgrade from Null");
+	});
+	</script>
+
+	<!-- Null to Nested Object -->
+	<div id="null-to-nested-obj" class="test-case">
+		<h3>6. Null to Nested Object</h3>
+		<div .obj :show-if=".">
+			<div .nested>
+				<span .name></span>
+			</div>
+		</div>
+	</div>
+	<script>
+	runTest("Null to Nested Object", async () => {
+		const el = document.getElementById("null-to-nested-obj");
+		const app = vivy(el, {});
+
+		assert(el.querySelector("span") === null, "Init Null");
+
+		app.obj = { nested: { name: "NAME" } };
+		await wait(10);
+		const span = el.querySelector("span");
+		assert(span.textContent === "NAME", "Upgrade to Nested Object");
+	});
+	</script>
+
+</body>
+</html>

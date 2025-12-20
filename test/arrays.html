@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="../vivy.js"></script>
+	<script src="./test_utils.js"></script>
+	<style>
+		.test-case { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+	</style>
+</head>
+<body>
+	<h1>Array Binding Tests</h1>
+
+	<!-- Basic Array -->
+	<div id="basic-array" class="test-case">
+		<h3>1. Basic Arrays</h3>
+		<ol>
+			<li .grocery_list[]></li>
+		</ol>
+	</div>
+	<script>
+	runTest("Basic Arrays", async () => {
+		const el = document.getElementById("basic-array");
+		const app = vivy(el, { grocery_list: [ "a", "b", "c" ] });
+		const ol = el.querySelector("ol");
+
+		const getItems = () => Array.from(ol.querySelectorAll("li")).map(ji => ji.textContent);
+
+		assert(getItems().join(",") === "a,b,c", "Init List");
+
+		app.grocery_list.push("d");
+		assert(getItems().join(",") === "a,b,c,d", "Push Item");
+
+		app.grocery_list = [];
+		assert(getItems().length === 0, "Clear List");
+	});
+	</script>
+
+	<!-- Nested Array -->
+	<div id="nested-array" class="test-case">
+		<h3>2. Nested Arrays</h3>
+		<ul>
+			<li .grid[][]></li>
+		</ul>
+	</div>
+	<script>
+	runTest("Nested Arrays", async () => {
+		const el = document.getElementById("nested-array");
+		const app = vivy(el, { grid: [ [ "blue", "green" ], [ "green", "blue" ] ] });
+		const ul = el.querySelector("ul");
+
+		const getItems = () => Array.from(ul.querySelectorAll("li")).map(ji => ji.textContent);
+
+		// Flattened render
+		assert(getItems().join(",") === "blue,green,green,blue", "Init Grid");
+
+		app.grid.push([ "red", "purple" ]);
+		assert(getItems().join(",") === "blue,green,green,blue,red,purple", "Push Row");
+
+		app.grid[0].push("red");
+		assert(getItems().join(",") === "blue,green,red,green,blue,red,purple", "Push Cell");
+
+		app.grid[2][1] = "cyan";
+		assert(getItems().join(",") === "blue,green,red,green,blue,red,cyan", "Update Cell");
+	});
+	</script>
+
+	<!-- Array of Objects -->
+	<div id="obj-array" class="test-case">
+		<h3>3. Array of Objects</h3>
+		<ul .classes[]>
+			<li .students[]></li>
+		</ul>
+	</div>
+	<script>
+	runTest("Array of Objects", async () => {
+		const el = document.getElementById("obj-array");
+		const app = vivy(el, {
+			classes: [
+				{ students: [ "alex", "blair" ] },
+				{ students: [ "cory", "quinn" ] }
+			]
+		});
+
+		const getItems = () => Array.from(el.querySelectorAll("li")).map(ji => ji.textContent);
+
+		assert(getItems().join(",") === "alex,blair,cory,quinn", "Init Obj Array");
+
+		app.classes[1] = { students: [ "daniel", "emerson" ] };
+		assert(getItems().join(",") === "alex,blair,daniel,emerson", "Replace Obj");
+	});
+	</script>
+
+	<!-- Complex Array -->
+	<div id="complex-array" class="test-case">
+		<h3>4. Complex Array</h3>
+		<div .first class="first">
+			<ol>
+				<li .[]><span .text></span></li>
+			</ol>
+			<div>Length: <strong .length></strong></div>
+		</div>
+		<p .second.0></p>
+		<p .second.2></p>
+	</div>
+	<script>
+	runTest("Complex Array", async () => {
+		const el = document.getElementById("complex-array");
+		const app = vivy(el, {
+			first: [ { text: "a" }, { text: "b" }, { text: "c" } ],
+			second: [ "alpha", "beta", "gamma" ]
+		});
+
+		const getItems = () => Array.from(el.querySelectorAll("ol li span")).map(s => s.textContent);
+		const getProps = () => Array.from(el.querySelectorAll("p")).map(p => p.textContent);
+		const length = el.querySelector("strong");
+
+		assert(getItems().join(",") === "a,b,c", "Init List");
+		assert(length.textContent === "3", "Init Length");
+		assert(getProps()[0] === "alpha" && getProps()[1] === "gamma", "Init Props");
+
+		app.first = [ { text: "d" } ];
+		app.second = [ "one", "two", "three" ];
+
+		assert(getItems().join(",") === "d", "Update List");
+		assert(length.textContent === "1", "Update Length");
+		assert(getProps()[0] === "one" && getProps()[1] === "three", "Update Props");
+	});
+	</script>
+
+	<!-- JSON Serialization Test -->
+	<div id="json-test" class="test-case">
+		<h3>5. JSON Serialization</h3>
+		<div></div>
+	</div>
+	<script>
+	runTest("JSON Serialization", async () => {
+		// Vivify creates the proxy without needing to be attached essentially for this test
+		const tests = [
+			{ obj: null, json: "null" },
+			{ obj: 1, json: "1" },
+			{ obj: { a: [ 1, 2, 3, 4 ] }, json: `{"a":[1,2,3,4]}` },
+			{ obj: [ { a: 1 }, { a: 2 } ], json: `[{"a":1},{"a":2}]` },
+			{ obj: { toJSON: () => ({ a: 3 }), b: 4 }, json: `{"a":3}` },
+		];
+
+		for(const { obj, json } of tests) {
+			// We use a dummy element just to get the proxy
+			const proxy = vivy(document.createElement("div"), obj);
+			// proxy is the data proxy
+			const actual = JSON.stringify(proxy);
+			assert(actual === json, `JSON Mismatch: ${actual} vs ${json}`);
+		}
+	});
+	</script>
+
+	<!-- Root Array Test -->
+	<div id="root-array-test" class="test-case">
+	  <h3>6. Root Array</h3>
+	  <ul>
+		  <li $.items[]></li>
+	  </ul>
+	</div>
+	<script>
+	runTest("Root Array", async () => {
+	  const el = document.getElementById("root-array-test");
+	  const app = vivy(el, { items: ["a", "b", "c"] });
+
+	  const getItems = () => Array.from(el.querySelectorAll("li")).map(li => li.textContent);
+
+	  assert(getItems().join(",") === "a,b,c", "Init Root Array");
+
+	  app.items.push("d");
+	  assert(getItems().join(",") === "a,b,c,d", "Push Root Array");
+	});
+	</script>
+
+	<!-- Root Reference Arrays -->
+	<div id="root-reference-arrays" class="test-case">
+		<h3>7. Root Reference Arrays (Bootstrapping)</h3>
+		<ul .lists[]>
+			<li .[]>
+				<span .text></span> <button @click="$.change">add</button>
+			</li>
+			<li $.base class="base"></li>
+		</ul>
+	</div>
+	<script>
+	runTest("Root Reference Arrays", async () => {
+		const el = document.getElementById("root-reference-arrays");
+		const app = vivy(el, {
+			lists: [
+				[ { text: "a" }, { text: "b" }, { text: "c" } ],
+				[ { text: "x" }, { text: "y" }, { text: "z" } ],
+			],
+			change: (_, obj) => obj.text += "!",
+			base: "base",
+		});
+
+		const getBase = () => Array.from(el.querySelectorAll(".base")).map(x => x.textContent);
+		const getTexts = () => Array.from(el.querySelectorAll("li span")).map(x => x.textContent);
+
+		// Check base is repeated for each list
+		assert(getBase().join(",") === "base,base", "Init Base Repeated");
+		assert(getTexts().length === 6, "Init Texts Count");
+
+		// Click odd-indexed buttons (b, x, z) to trigger text += "!"
+		const buttons = el.querySelectorAll("button");
+		buttons.forEach((btn, idx) => {
+			if (idx % 2 !== 0) btn.dispatchEvent(new Event("click"));
+		});
+
+		assert(getTexts().join(",") === "a,b!,c,x!,y,z!", "Buttons Triggered Updates");
+
+		// Bootstrapping / Root Prop update
+		app.base = "BASE";
+		assert(getBase().join(",") === "BASE,BASE", "Root property update propagates");
+
+		// Structural Change
+		app.lists.push([ { text: "new" } ]);
+		app.base = "??";
+
+		// Now 3 lists. Base repeated 3 times.
+		await wait(10);
+		assert(getBase().join(",") === "??,??,??", "Structural + Root Prop Update");
+		assert(getTexts().join(",") === "a,b!,c,x!,y,z!,new", "New List Added");
+	});
+	</script>
+
+	<!-- Empty Array Initial State -->
+	<div id="empty-array-test" class="test-case">
+		<h3>8. Empty Array Initial State</h3>
+		<ul>
+			<li .items[]></li>
+		</ul>
+		<span .items.length></span>
+	</div>
+	<script>
+	runTest("Empty Array Initial State", async () => {
+		const el = document.getElementById("empty-array-test");
+		const app = vivy(el, { items: [] });
+
+		const ul = el.querySelector("ul");
+		const lengthSpan = el.querySelector("span");
+
+		assert(ul.querySelectorAll("li").length === 0, "No items rendered");
+		assert(lengthSpan.textContent === "0", "Length shows 0");
+
+		app.items.push("first");
+		assert(ul.querySelectorAll("li").length === 1, "Item added");
+		assert(lengthSpan.textContent === "1", "Length updated");
+
+		return el;
+	});
+	</script>
+
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="../vivy.js"></script>
+	<script src="./test_utils.js"></script>
+	<style>
+		.test-case { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+	</style>
+</head>
+<body>
+	<h1>Event Binding Tests</h1>
+
+	<!-- Basic Events -->
+	<div id="events-test" class="test-case">
+		<h3>1. Basic Events</h3>
+		<button id="btn" @click=".clicker" @mouseup=".upper" @mousemove=".mover">button</button>
+	</div>
+	<script>
+	runTest("Basic Events", async () => {
+		const el = document.getElementById("events-test");
+		const app = vivy(el, {
+			clicker: (_, obj) => obj.clickerCalls += 1,
+			clickerCalls: 0,
+
+			upper: (_, obj) => obj.upperCalls += 1,
+			upperCalls: 0,
+
+			mover: (_, obj) => obj.moverCalls += 1,
+			moverCalls: 0,
+		});
+
+		const btn = el.querySelector("button");
+
+		btn.dispatchEvent(new Event("click"));
+		assert(app.clickerCalls === 1, "Click Handler");
+
+		btn.dispatchEvent(new Event("mouseup"));
+		assert(app.upperCalls === 1, "Mouseup Handler");
+
+		btn.dispatchEvent(new Event("mousemove"));
+		assert(app.moverCalls === 1, "Mousemove Handler");
+
+		// Update handlers
+		app.clicker = (_, obj) => obj.clickerCalls += 10;
+		btn.dispatchEvent(new Event("click"));
+		assert(app.clickerCalls === 11, "Updated Click Handler");
+
+		// Disable handler (null)
+		app.clicker = null;
+		btn.dispatchEvent(new Event("click"));
+		assert(app.clickerCalls === 11, "Null Click Handler (No effect)");
+	});
+	</script>
+
+	<!-- Array Item Events -->
+	<div id="array-events" class="test-case">
+		<h3>2. Array Item Events & Scope</h3>
+		<ul .items.length?>
+			<li .items[] data-id.=".id" @click=".click">
+				<span .name></span>
+			</li>
+		</ul>
+	</div>
+	<script>
+	runTest("Array Item Events", async () => {
+		const el = document.getElementById("array-events");
+		const app = vivy(el, {
+			items: [
+				{ id: 1, name: "foo", clicked: "none", click: (_, node) => node.clicked = "foo" },
+				{ id: 2, name: "bar", clicked: "none", click: (_, node) => node.clicked = "bar" },
+				{ id: 3, name: "baz", clicked: "none", click: (_, node) => node.clicked = "baz" },
+			]
+		});
+
+		const lis = el.querySelectorAll("li");
+
+		// Click first item
+		lis[0].dispatchEvent(new Event("click"));
+		assert(app.items[0].clicked === "foo", "Item 1 Clicked");
+		assert(app.items[1].clicked === "none", "Item 2 Unchanged");
+
+		// Click third item
+		lis[2].dispatchEvent(new Event("click"));
+		assert(app.items[2].clicked === "baz", "Item 3 Clicked");
+	});
+	</script>
+
+	<!-- Non-function Event Handler Warning -->
+	<div id="non-fn-handler-test" class="test-case">
+		<h3>3. Non-function Event Handler Warning</h3>
+		<button @click=".handler">Click</button>
+	</div>
+	<script>
+	runTest("Non-function Event Handler Warning", async () => {
+		const el = document.getElementById("non-fn-handler-test");
+		const warnings = [];
+		const originalWarn = console.warn;
+		console.warn = (...args) => warnings.push(args);
+
+		try {
+			vivy(el, { handler: "not a function" });
+			const btn = el.querySelector("button");
+
+			btn.dispatchEvent(new Event("click"));
+
+			assert(warnings.some(w => w[0].includes("Non-function")), "Warns on non-function handler");
+		} finally {
+			console.warn = originalWarn;
+		}
+
+		return el;
+	});
+	</script>
+
+</body>
+</html>

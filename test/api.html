@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="../vivy.js"></script>
+	<script src="./test_utils.js"></script>
+	<style>
+		.test-case { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+	</style>
+</head>
+<body>
+	<h1>API & Edge Case Tests</h1>
+
+	<!-- No-Op Mutation Test -->
+	<div id="noop-test" class="test-case">
+		<h3>1. Identical Value No-Op</h3>
+		<!-- Setup done in script -->
+	</div>
+	<script>
+	runTest("Identical Value No-Op", async () => {
+		const div = document.createElement("div");
+		div.innerHTML = `<span .text class.="$.attr"></span><span .vals[]></span>`;
+
+		// Vivify on detached element
+		const data = vivy(div, { text: "hello", attr: "okay", vals: [ 1, 2, 3 ] });
+
+		// Observe for mutations
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(div, { childList: true, attributes: true, subtree: true });
+
+		// Set identical values
+		data.text = "hello";
+		data.attr = "okay";
+		// Arrays are mutable, assignment might trigger?
+		// Vivy might replace if reference changes or content differs.
+		// Original test used `data.vals = data.vals` (same ref) -> no op?
+		// And `data.vals[0] = 1` (same value) -> no op?
+
+		// In Vivy, setting same primitive should be no-op.
+
+		data.vals[0] = 1;
+
+		await wait(10); // Wait for microtasks
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+		return document.getElementById("noop-test");
+	});
+	</script>
+
+	<!-- Error Handling -->
+	<div id="error-test" class="test-case">
+		<h3>2. API Error Handling</h3>
+	</div>
+	<script>
+	runTest("Non-HTMLElement Argument", async () => {
+		let threwHelpfulError = false;
+		try { vivy({}, {}); }
+		catch(err) { threwHelpfulError = err.message.includes("HTMLElement"); }
+
+		assert(threwHelpfulError, "Vivy should throw if first arg is not HTMLElement");
+		return document.getElementById("error-test");
+	});
+	</script>
+
+	<!-- Spread Copy -->
+	<div id="spread-test" class="test-case">
+		<h3>3. Proxy Spread Behavior</h3>
+	</div>
+	<script>
+	runTest("Proxy Spread", async () => {
+		const div = document.createElement("div");
+		const data = vivy(div, {});
+		data.text = "hello";
+		data.attr = "okay";
+		data.vals = { a: 1, b: 2 };
+
+		const copy = { ...data };
+
+		assert(copy.text === "hello", "Copy text");
+		assert(copy.attr === "okay", "Copy attr");
+		assert(copy.vals.a === 1, "Copy vals.a");
+		assert(copy.vals.b === 2, "Copy vals.b");
+		return document.getElementById("spread-test");
+	});
+	</script>
+
+	<!-- Nulled Sub-Fields -->
+	<div id="null-field-test" class="test-case">
+		<h3>4. Nulled Sub-Fields</h3>
+		<div id="null-container"><span .field.a.more></span></div>
+	</div>
+	<script>
+	runTest("Nulled Sub-Fields", async () => {
+		const div = document.getElementById("null-container");
+		const data = vivy(div, { field: { a: { more: 1 }, b: 2 } });
+
+		data.field = {};
+
+		// data.field.a should be null/undefined
+		assert(data.field.a == null, "Field.a should be null/undefined after parent reset");
+		return document.getElementById("null-field-test");
+	});
+	</script>
+
+	<!-- Proxy Reflection -->
+	<div id="proxy-reflection-test" class="test-case">
+		<h3>5. Proxy Reflection (ownKeys, has)</h3>
+	</div>
+	<script>
+	runTest("Proxy Reflection", async () => {
+		const div = document.createElement("div");
+		const app = vivy(div, { a: 1, b: 2 });
+
+		assert('a' in app, "'a' in app");
+		assert(!('z' in app), "'z' not in app");
+
+		const keys = Object.keys(app);
+		assert(keys.includes('a') && keys.includes('b'), "Object.keys returns props");
+		assert(keys.length === 2, "Object.keys length");
+
+		const json = JSON.stringify(app);
+		assert(json === '{"a":1,"b":2}', "JSON.stringify works");
+		return document.getElementById("proxy-reflection-test");
+	});
+	</script>
+
+	<!-- Delete Property -->
+	<div id="delete-property-test" class="test-case">
+		<h3>6. Delete Property</h3>
+		<div .name></div>
+		<div .age></div>
+	</div>
+	<script>
+	runTest("Delete Property", async () => {
+		const el = document.getElementById("delete-property-test");
+		const app = vivy(el, { name: "John", age: 30 });
+
+		const nameDiv = el.querySelector("div");
+		const ageDiv = el.querySelectorAll("div")[1];
+
+		assert(nameDiv.textContent === "John", "Init name");
+		assert(ageDiv.textContent === "30", "Init age");
+
+		delete app.name;
+		assert(nameDiv.textContent === "", "Deleted property clears DOM");
+
+		app.temp = "test";
+		const result = delete app.temp;
+		assert(result === true, "Delete returns true");
+
+		return el;
+	});
+	</script>
+
+	<!-- Console Warnings - Near Miss -->
+	<div id="warning-test" class="test-case">
+		<h3>7. Console Warnings (Near Miss)</h3>
+		<div .user-name></div>
+	</div>
+	<script>
+	runTest("Console Warnings - Near Miss", async () => {
+		const warnings = [];
+		const originalWarn = console.warn;
+		console.warn = (...args) => warnings.push(args);
+
+		try {
+			const div2 = document.createElement("div");
+			div2.innerHTML = "<span .username></span>";
+			vivy(div2, { UserName: "Bob" });
+
+			assert(warnings.some(w => w[0].includes("Near miss")), "Detects mixed-case mismatch");
+		} finally {
+			console.warn = originalWarn;
+		}
+		return document.getElementById("warning-test");
+	});
+	</script>
+
+	<!-- Vivify Alias -->
+	<div id="vivify-test" class="test-case">
+		<h3>8. Vivify Alias</h3>
+		<div .message></div>
+	</div>
+	<script>
+	runTest("Vivify Alias", async () => {
+		const el = document.getElementById("vivify-test");
+
+		assert(typeof vivify === "function", "vivify is a function");
+		assert(vivify === vivy, "vivify === vivy");
+
+		const app = vivify(el, { message: "Hello from vivify" });
+		const div = el.querySelector("div");
+
+		assert(div.textContent === "Hello from vivify", "vivify works correctly");
+
+		app.message = "Updated via vivify";
+		assert(div.textContent === "Updated via vivify", "vivify proxy updates work");
+
+		return el;
+	});
+	</script>
+
+	<!-- Non-HTMLElement Error -->
+	<div id="non-element-test" class="test-case">
+		<h3>9. Non-HTMLElement Error</h3>
+	</div>
+	<script>
+	runTest("Non-HTMLElement Error", async () => {
+		let threwError = false;
+		let errorMessage = "";
+
+		try {
+			vivy(null, {});
+		} catch (e) {
+			threwError = true;
+			errorMessage = e.message;
+		}
+
+		assert(threwError, "Throws on null element");
+		assert(errorMessage.includes("HTMLElement"), "Error mentions HTMLElement");
+
+		threwError = false;
+		try {
+			vivy({}, {});
+		} catch {
+			threwError = true;
+		}
+		assert(threwError, "Throws on plain object");
+
+		threwError = false;
+		try {
+			vivy("div", {});
+		} catch {
+			threwError = true;
+		}
+		assert(threwError, "Throws on string");
+
+		return document.getElementById("non-element-test");
+	});
+	</script>
+
+	<!-- Assign-to on Non-Input Warning -->
+	<div id="assign-non-input-test" class="test-case">
+		<h3>10. Assign-to on Non-Input Warning</h3>
+		<div :assign-to="value"></div>
+	</div>
+	<script>
+	runTest("Assign-to on Non-Input Warning", async () => {
+		const el = document.getElementById("assign-non-input-test");
+		const warnings = [];
+		const originalWarn = console.warn;
+		console.warn = (...args) => warnings.push(args);
+
+		try {
+			vivy(el, { value: "test" });
+
+			assert(warnings.some(w => w[0].includes("non-input")), "Warns on assign-to non-input");
+		} finally {
+			console.warn = originalWarn;
+		}
+
+		return el;
+	});
+	</script>
+
+	<!-- Show-If Array Error -->
+	<div id="show-if-array-error-test" class="test-case">
+		<h3>11. Show-If Array Error</h3>
+	</div>
+	<script>
+	runTest("Show-If Array Error", async () => {
+		let threwError = false;
+		let errorMessage = "";
+
+		try {
+			const div = document.createElement("div");
+			div.innerHTML = "<span .items[]?></span>";
+			vivy(div, { items: [1, 2, 3] });
+		} catch (e) {
+			threwError = true;
+			errorMessage = e.message;
+		}
+
+		assert(threwError, "Throws on show-if array path");
+		assert(errorMessage.includes("show-if") || errorMessage.includes("array"), "Error mentions show-if or array");
+
+		return document.getElementById("show-if-array-error-test");
+	});
+	</script>
+
+	<!-- Assign-to Array Error -->
+	<div id="assign-to-array-error-test" class="test-case">
+		<h3>12. Assign-to Array Error</h3>
+	</div>
+	<script>
+	runTest("Assign-to Array Error", async () => {
+		let threwError = false;
+
+		try {
+			const div = document.createElement("div");
+			div.innerHTML = "<input :assign-to='items[]'>";
+			vivy(div, { items: [1, 2, 3] });
+		} catch {
+			threwError = true;
+		}
+
+		assert(threwError, "Throws on assign-to array path");
+
+		return document.getElementById("assign-to-array-error-test");
+	});
+	</script>
+
+	<!-- Attribute Path Array Error -->
+	<div id="attr-array-error-test" class="test-case">
+		<h3>13. Attribute Path Array Error</h3>
+	</div>
+	<script>
+	runTest("Attribute Path Array Error", async () => {
+		let threwError = false;
+
+		try {
+			const div = document.createElement("div");
+			div.innerHTML = "<div title.='items[]'></div>";
+			vivy(div, { items: ["a", "b"] });
+		} catch {
+			threwError = true;
+		}
+
+		assert(threwError, "Throws on attribute array path");
+
+		return document.getElementById("attr-array-error-test");
+	});
+	</script>
+
+	<!-- Event Handler Path Array Error -->
+	<div id="event-array-error-test" class="test-case">
+		<h3>14. Event Handler Path Array Error</h3>
+	</div>
+	<script>
+	runTest("Event Handler Path Array Error", async () => {
+		let threwError = false;
+
+		try {
+			const div = document.createElement("div");
+			div.innerHTML = "<button @click='handlers[]'>Click</button>";
+			vivy(div, { handlers: [() => {}] });
+		} catch {
+			threwError = true;
+		}
+
+		assert(threwError, "Throws on event handler array path");
+
+		return document.getElementById("event-array-error-test");
+	});
+	</script>
+
+	<!-- Proxy Root Update -->
+	<div id="proxy-root-update-test" class="test-case">
+		<h3>15. Proxy Root Update (Call as Function)</h3>
+		<div .name></div>
+		<div .count></div>
+	</div>
+	<script>
+	runTest("Proxy Root Update", async () => {
+		const el = document.getElementById("proxy-root-update-test");
+		const app = vivy(el, { name: "Alice", count: 5 });
+
+		const nameDiv = el.querySelector("div");
+		const countDiv = el.querySelectorAll("div")[1];
+
+		assert(nameDiv.textContent === "Alice", "Init name");
+		assert(countDiv.textContent === "5", "Init count");
+
+		app({ name: "Bob", count: 10 });
+
+		assert(nameDiv.textContent === "Bob", "Root update name");
+		assert(countDiv.textContent === "10", "Root update count");
+
+		app({ name: "Charlie", count: 15, extra: "ignored" });
+		assert(nameDiv.textContent === "Charlie", "Another root update");
+
+		return el;
+	});
+	</script>
+
+	<!-- getOwnPropertyDescriptor -->
+	<div id="property-descriptor-test" class="test-case">
+		<h3>16. getOwnPropertyDescriptor Support</h3>
+	</div>
+	<script>
+	runTest("getOwnPropertyDescriptor", async () => {
+		const div = document.createElement("div");
+		const app = vivy(div, { name: "test", count: 42 });
+
+		const desc = Object.getOwnPropertyDescriptor(app, "name");
+		assert(desc !== undefined, "Descriptor exists");
+		assert(desc.enumerable === true, "Property is enumerable");
+
+		const noDesc = Object.getOwnPropertyDescriptor(app, "nonexistent");
+		assert(noDesc === undefined, "No descriptor for missing prop");
+
+		return document.getElementById("property-descriptor-test");
+	});
+	</script>
+
+	<!-- Duplicate Scope Warning -->
+	<div id="duplicate-scope-test" class="test-case">
+		<h3>17. Duplicate Scope Warning</h3>
+		<div .first :scope=".second"></div>
+	</div>
+	<script>
+	runTest("Duplicate Scope Warning", async () => {
+		const el = document.getElementById("duplicate-scope-test");
+		const warnings = [];
+		const originalWarn = console.warn;
+		console.warn = (...args) => warnings.push(args);
+
+		try {
+			vivy(el, { first: "a", second: "b" });
+
+			assert(warnings.some(w => w[0].includes("Multiple scope")), "Warns on duplicate scope");
+		} finally {
+			console.warn = originalWarn;
+		}
+
+		return el;
+	});
+	</script>
+
+</body>
+</html>

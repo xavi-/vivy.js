@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="../vivy.js"></script>
+	<script src="./test_utils.js"></script>
+	<style>
+		.test-case { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+	</style>
+</head>
+<body>
+	<h1>Complex Input Tests</h1>
+
+	<!-- Input Complex (Table) -->
+	<div id="input-complex" class="test-case">
+		<h3>1. Complex Input (Table)</h3>
+		<table>
+			<tr .[]>
+				<td .[]>
+					<input :assign-to="." type="number" />
+				</td>
+			</tr>
+		</table>
+	</div>
+	<script>
+	runTest("Complex Input (Table)", async () => {
+		const el = document.getElementById("input-complex");
+		const app = vivy(el, [
+			[ 1, 2, 3, 4 ],
+			[ 5, 6, 7, 8 ]
+		]);
+
+		const input2_2 = el.querySelector("tr:nth-child(1) td:nth-child(2) input"); // 2
+		assert(input2_2.value === "2", "Init Value [0][1]");
+
+		app[0][1] = 12;
+		assert(input2_2.value === "12", "Update Value [0][1]");
+
+		input2_2.value = "182";
+		input2_2.dispatchEvent(new Event("input"));
+		assert(app[0][1] === 182, "View->Model [0][1]");
+	});
+	</script>
+
+	<!-- Input Checkbox -->
+	<div id="input-checkbox" class="test-case">
+		<h3>2. Input Checkbox</h3>
+		<label><input name="groupA" type="checkbox" value="woo"> woo</label>
+		<label><input name="groupA" type="checkbox" value="poo"> poo</label>
+		<label><input name="groupA" type="checkbox" value="chew"> chew</label>
+		<br>
+		<label><input name="individualA" type="checkbox"> shew</label>
+		<label><input name="individualB" type="checkbox" value="doo"> moo</label>
+	</div>
+	<script>
+	runTest("Input Checkbox", async () => {
+		const el = document.getElementById("input-checkbox");
+		const app = vivy(el, { groupA: null, individualA: false, individualB: null });
+
+		const woo = el.querySelector("[value=woo]");
+		const poo = el.querySelector("[value=poo]");
+		const chew = el.querySelector("[value=chew]");
+		const indA = el.querySelector("[name=individualA]");
+		const indB = el.querySelector("[name=individualB]");
+
+		// Initial state checks
+		assert(woo.checked === false, "Init Woo");
+		assert(poo.checked === false, "Init Poo");
+		assert(chew.checked === false, "Init Chew");
+		assert(indA.checked === false, "Init IndA");
+		assert(indB.checked === false, "Init IndB");
+
+		// Update Model
+		app.individualA = true;
+		assert(indA.checked === true, "Update IndA True");
+
+		// View -> Model (Group)
+		woo.checked = true;
+		woo.dispatchEvent(new Event("input"));
+		poo.checked = true;
+		poo.dispatchEvent(new Event("input"));
+
+		assert(Array.isArray(app.groupA), "GroupA became array");
+		assert(app.groupA.includes("woo") && app.groupA.includes("poo"), "GroupA values");
+
+		// Clear array
+		app.groupA = [];
+		assert(woo.checked === false, "Clear Woo");
+		assert(poo.checked === false, "Clear Poo");
+		assert(chew.checked === false, "Clear Chew");
+
+		// Individual B - value binding
+		indB.checked = true;
+		indB.dispatchEvent(new Event("input"));
+		assert(app.individualB === "doo", "IndB Value Binding");
+
+		// Boolean toggle false
+		indA.checked = false;
+		indA.dispatchEvent(new Event("input"));
+		assert(app.individualA === false, "IndA Toggle False");
+
+		// Boolean toggle true
+		indA.checked = true;
+		indA.dispatchEvent(new Event("input"));
+		assert(app.individualA === true, "IndA Toggle True");
+	});
+	</script>
+
+	<!-- Input Select -->
+	<div id="input-select" class="test-case">
+		<h3>3. Input Select</h3>
+		<select name="value">
+			<option .options[]></option>
+		</select>
+	</div>
+	<script>
+	runTest("Input Select", async () => {
+		const el = document.getElementById("input-select");
+		const app = vivy(el, { value: null, options: [ "a", "b", "c", "d" ] });
+		const select = el.querySelector("select");
+
+		assert(select.children.length === 4, "Options Rendered");
+
+		app.value = "d";
+		assert(select.value === "d", "Model->View Select");
+
+		// View->Model
+		select.value = "b";
+		select.dispatchEvent(new Event("input"));
+		assert(app.value === "b", "View->Model Select");
+
+		app.value = "a";
+		assert(select.value === "a", "Model->View Select A");
+	});
+	</script>
+
+	<!-- Input Multi-Select -->
+	<div id="input-multiselect" class="test-case">
+		<h3>4. Input Multi-Select</h3>
+		<select :assign-to="values" multiple>
+			<option .options[]></option>
+		</select>
+	</div>
+	<script>
+	runTest("Input Multi-Select", async () => {
+		const el = document.getElementById("input-multiselect");
+		const app = vivy(el, { values: null, options: [ "a", "b", "c", "d" ] });
+		const select = el.querySelector("select");
+
+		app.values = [ "a", "d" ];
+		assert(select.selectedOptions.length === 2, "Multi Select Count");
+		assert(select.options[0].selected, "A Selected");
+		assert(select.options[3].selected, "D Selected");
+
+		select.options[1].selected = true;
+		select.dispatchEvent(new Event("input"));
+
+		assert(app.values.includes("a") && app.values.includes("b") && app.values.includes("d"), "View->Model Add");
+
+		select.options[0].selected = false;
+		select.dispatchEvent(new Event("input"));
+		assert(!app.values.includes("a"), "View->Model Remove");
+	});
+	</script>
+
+	<!-- Input Root Value -->
+	<div id="input-root-value" class="test-case">
+		<h3>5. Input Root Value</h3>
+		<select . multiple>
+			<option>a</option>
+			<option>b</option>
+			<option>c</option>
+		</select>
+	</div>
+	<script>
+	runTest("Input Root Value", async () => {
+		const el = document.getElementById("input-root-value");
+		const app = vivy(el, [ "a" ]);
+		const select = el.querySelector("select");
+
+		assert(select.value === "a", "Init Root Value");
+
+		select.querySelector("option:nth-child(2)").selected = true;
+		select.dispatchEvent(new Event("input"));
+		assert(app.length === 2 && app.includes("b"), "View->Model Root");
+
+		app.shift();
+		assert(select.value === "b" && select.selectedOptions.length === 1, "Model->View Shift");
+	});
+	</script>
+
+	<!-- File Input -->
+	<div id="file-input-test" class="test-case">
+		<h3>6. File Input Clearing</h3>
+		<input type="file" :assign-to="file">
+	</div>
+	<script>
+	runTest("File Input Clearing", async () => {
+		const el = document.getElementById("file-input-test");
+		const app = vivy(el, { file: null });
+		const input = el.querySelector("input");
+
+		input.value = "";
+		app.file = "something"; // Should be ignored for file input (read-only)
+		assert(input.value === "", "Ignore non-null assignment");
+
+		app.file = null;
+		assert(input.value === "", "Null assignment safe");
+		return el;
+	});
+	</script>
+
+	<!-- Week Input -->
+	<div id="week-input-test" class="test-case">
+		<h3>7. Week Input</h3>
+		<input type="week" :assign-to="week">
+	</div>
+	<script>
+	runTest("Week Input", async () => {
+		const el = document.getElementById("week-input-test");
+		const now = new Date();
+		const app = vivy(el, { week: now });
+
+		const nextWeek = new Date(now);
+		nextWeek.setDate(now.getDate() + 7);
+		app.week = nextWeek;
+
+		// Verify no errors thrown
+		assert(true, "Week input accepts Date without error");
+		return el;
+	});
+	</script>
+
+	<!-- Date Inputs (Month/Time) -->
+	<div id="date-input-test" class="test-case">
+		<h3>8. Date Inputs (Month/Time)</h3>
+		<input type="month" :assign-to="month">
+		<input type="time" :assign-to="time">
+	</div>
+	<script>
+	runTest("Date Inputs", async () => {
+		const el = document.getElementById("date-input-test");
+		const now = new Date();
+		const app = vivy(el, { month: now, time: now });
+
+		const inputs = el.querySelectorAll("input");
+
+		const nextMonth = new Date(now);
+		nextMonth.setMonth(now.getMonth() + 1);
+		app.month = nextMonth;
+
+		if (inputs[0].valueAsDate) {
+			assert(inputs[0].valueAsDate.getUTCMonth() === nextMonth.getUTCMonth(), "Month input updated");
+		}
+		if (inputs[1].valueAsDate) {
+			assert(inputs[1].valueAsDate.getUTCHours() === now.getUTCHours(), "Time input set");
+		}
+
+		return el;
+	});
+	</script>
+
+	<!-- Checkbox with Default Value -->
+	<div id="checkbox-default-test" class="test-case">
+		<h3>9. Checkbox with No Value (Default 'on')</h3>
+		<input type="checkbox" name="toggle">
+	</div>
+	<script>
+	runTest("Checkbox Default Value", async () => {
+		const el = document.getElementById("checkbox-default-test");
+		const app = vivy(el, { toggle: true });
+
+		const checkbox = el.querySelector("input");
+
+		assert(checkbox.checked === true, "Checkbox checked when data=true");
+
+		app.toggle = false;
+		assert(checkbox.checked === false, "Checkbox unchecked when data=false");
+
+		checkbox.checked = true;
+		checkbox.dispatchEvent(new Event("input"));
+		assert(app.toggle === true, "View updates model (true)");
+
+		checkbox.checked = false;
+		checkbox.dispatchEvent(new Event("input"));
+		assert(app.toggle === false, "View updates model (false)");
+
+		return el;
+	});
+	</script>
+</body>
+</html>

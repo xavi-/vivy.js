@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="../vivy.js"></script>
+	<script src="./test_utils.js"></script>
+	<style>
+		.test-case { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+		.hidden { display: none; }
+	</style>
+</head>
+<body>
+	<h1>Multi-Binding Tests</h1>
+
+	<!-- Case 1: Multiple Text Bindings -->
+	<div id="test-1" class="test-case">
+		<h3>1. Multiple Text Bindings</h3>
+		<span class="t1-a" .message></span>
+		<div class="t1-b" .message></div>
+		<p class="t1-c" .message></p>
+	</div>
+	<script>
+	runTest("Multiple Text Bindings", async () => {
+		const el = document.getElementById("test-1");
+		const app = vivy(el, { message: "Initial" });
+
+		const a = el.querySelector('.t1-a');
+		const b = el.querySelector('.t1-b');
+		const c = el.querySelector('.t1-c');
+
+		// Check initial
+		assert(a.textContent === "Initial", `Init A: ${a.textContent}`);
+		assert(b.textContent === "Initial", `Init B: ${b.textContent}`);
+		assert(c.textContent === "Initial", `Init C: ${c.textContent}`);
+
+		// Update
+		app.message = "Updated Value";
+
+		assert(a.textContent === "Updated Value", `Update A: ${a.textContent}`);
+		assert(b.textContent === "Updated Value", `Update B: ${b.textContent}`);
+		assert(c.textContent === "Updated Value", `Update C: ${c.textContent}`);
+	});
+	</script>
+
+	<!-- Case 2: Attribute and Text Binding Mix -->
+	<div id="test-2" class="test-case">
+		<h3>2. Attr and Text Binding Mix</h3>
+		<input class="t2-input" .count type="number">
+		<span class="t2-text" .count></span>
+		<div class="t2-attr" title.=".count">Hover me</div>
+	</div>
+	<script>
+	runTest("Attr and Text Binding Mix", async () => {
+		const el = document.getElementById("test-2");
+		const app = vivy(el, { count: 10 });
+
+		const input = el.querySelector('.t2-input');
+		const text = el.querySelector('.t2-text');
+		const attr = el.querySelector('.t2-attr');
+
+		// Check initial
+		assert(input.value === "10", `Init Input: ${input.value}`);
+		assert(text.textContent === "10", `Init Text: ${text.textContent}`);
+		assert(attr.getAttribute('title') === "10", `Init Attr: ${attr.getAttribute('title')}`);
+
+		// Update Model
+		app.count = 20;
+
+		assert(input.value === "20", `Model Update Input: ${input.value}`);
+		assert(text.textContent === "20", `Model Update Text: ${text.textContent}`);
+		assert(attr.getAttribute('title') === "20", `Model Update Attr: ${attr.getAttribute('title')}`);
+
+		// Update Input (Two-way binding)
+		input.value = "30";
+		input.dispatchEvent(new Event('input')); // Trigger update
+
+		assert(app.count === 30, `View Update Model: ${app.count}`);
+		assert(text.textContent === "30", `View Update Text: ${text.textContent}`);
+		assert(attr.getAttribute('title') === "30", `View Update Attr: ${attr.getAttribute('title')}`);
+	});
+	</script>
+
+	<!-- Case 3: Nested Object Multi-Binding -->
+	<div id="test-3" class="test-case">
+		<h3>3. Nested Object Multi-Binding</h3>
+		<span class="t3-first" .user.first></span>
+		<span class="t3-last" .user.last></span>
+		<div class="t3-full">
+			<span .user.first></span> <span .user.last></span>
+		</div>
+	</div>
+	<script>
+	runTest("Nested Object Multi-Binding", async () => {
+		const el = document.getElementById("test-3");
+		const app = vivy(el, { user: { first: "John", last: "Doe" } });
+
+		const first1 = el.querySelector('.t3-first');
+		const last1 = el.querySelector('.t3-last');
+		const first2 = el.querySelector('.t3-full span:nth-child(1)');
+
+		assert(first1.textContent === "John", "Init First1");
+		assert(first2.textContent === "John", "Init First2");
+
+		// Update deep property
+		app.user.first = "Jane";
+
+		assert(first1.textContent === "Jane", "Update First1");
+		assert(first2.textContent === "Jane", "Update First2");
+		assert(last1.textContent === "Doe", "Last should be unchanged");
+
+		// Replace entire object
+		app.user = { first: "Bob", last: "Smith" };
+
+		assert(first1.textContent === "Bob", "Replace First1");
+		assert(last1.textContent === "Smith", "Replace Last1");
+	});
+	</script>
+
+	<!-- Case 4: Multiple Lists -->
+	<div id="test-4" class="test-case">
+		<h3>4. Multiple Lists (Same Source)</h3>
+		<ul class="list-a">
+			<li .tags[]></li>
+		</ul>
+		<div class="list-b">
+			<span .tags[]></span>
+		</div>
+	</div>
+	<script>
+	runTest("Multiple Lists", async () => {
+		const el = document.getElementById("test-4");
+		const app = vivy(el, { tags: ["a", "b"] });
+
+		const listA = el.querySelector('.list-a');
+		const listB = el.querySelector('.list-b');
+
+		assert(listA.children.length === 2, "Init ListA length");
+		assert(listB.children.length === 2, `Init ListB length (2 items + comment hidden)`);
+
+		const itemsA = listA.querySelectorAll('li');
+		const itemsB = listB.querySelectorAll('span');
+
+		assert(itemsA.length === 2, "Init ItemsA count");
+		assert(itemsB.length === 2, "Init ItemsB count");
+		assert(itemsA[0].textContent === "a", "Init ItemA[0]");
+		assert(itemsB[0].textContent === "a", "Init ItemB[0]");
+
+		// Push item
+		app.tags.push("c");
+
+		// Need to re-query as elements are dynamic
+		const newItemsA = listA.querySelectorAll('li');
+		const newItemsB = listB.querySelectorAll('span');
+
+		assert(newItemsA.length === 3, "Push ItemsA count");
+		assert(newItemsB.length === 3, "Push ItemsB count");
+		assert(newItemsA[2].textContent === "c", "Push ItemA[2]");
+		assert(newItemsB[2].textContent === "c", "Push ItemB[2]");
+	});
+	</script>
+
+</body>
+</html>

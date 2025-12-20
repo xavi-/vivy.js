@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="../vivy.js"></script>
+	<script src="./test_utils.js"></script>
+	<style>
+		.test-case { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+	</style>
+</head>
+<body>
+	<h1>Conditional Binding Tests</h1>
+
+	<!-- Basic Show/Hide -->
+	<div id="show-hide-test" class="test-case">
+		<h3>1. Show/Hide Directive</h3>
+		<div id="show" :show-if=".show?">showing</div>
+		<div id="neg-show" :show-if="!.show?">showing</div>
+
+		<div id="inline-show" .show?>showing</div>
+		<div id="inline-neg-show" !.show?>showing</div>
+
+		<ul .arr>
+			<li .[]></li>
+		</ul>
+
+		<strong .!falsy?>all falsy?</strong>
+	</div>
+	<script>
+	runTest("Show/Hide Directive", async () => {
+		const el = document.getElementById("show-hide-test");
+		const app = vivy(el, { show: true, arr: [ "a", "b", "c" ], falsy: 0 });
+
+		const show = el.querySelector("#show");
+		const negShow = el.querySelector("#neg-show");
+		const inlineShow = el.querySelector("#inline-show");
+		const inlineNegShow = el.querySelector("#inline-neg-show");
+		const strong = el.querySelector("strong");
+		const ul = el.querySelector("ul");
+
+		const isVisible = (elem) => elem?.parentNode;
+
+		assert(isVisible(show), "Init Show Visible");
+		assert(!isVisible(negShow), "Init NegShow Hidden");
+		assert(isVisible(inlineShow), "Init InlineShow Visible");
+		assert(!isVisible(inlineNegShow), "Init InlineNegShow Hidden");
+		assert(ul.children.length > 0, "Init List Visible");
+
+		app.show = false;
+		await wait(10);
+		const negShowVisible = el.querySelector("#neg-show");
+		const inlineNegShowVisible = el.querySelector("#inline-neg-show");
+		assert(!isVisible(show), "Update Show Hidden");
+		assert(isVisible(negShowVisible), "Update NegShow Visible");
+		assert(!isVisible(inlineShow), "Update InlineShow Hidden");
+		assert(isVisible(inlineNegShowVisible), "Update InlineNegShow Visible");
+
+		app.falsy = null;
+		assert(!isVisible(strong), "Null Falsy Hidden");
+
+		return el;
+	});
+	</script>
+
+	<!-- Show-If Bug Repro -->
+	<div id="show-if-bug" class="test-case">
+		<h3>2. Show-If Bug</h3>
+		<div .prop_a.prop_b?><span .prop_a.prop_b></span></div>
+	</div>
+	<script>
+	runTest("Show-If Bug", async () => {
+		const el = document.getElementById("show-if-bug");
+		const app = vivy(el, { prop_a: null });
+
+		const div = el.querySelector("div > div");
+		const isVisible = (elem) => elem?.parentNode;
+
+		assert(!isVisible(div), "Init Hidden");
+
+		app.prop_a = { prop_b: "hello" };
+		const divVisible = el.querySelector("div > div");
+		assert(isVisible(divVisible), "Update Visible");
+		assert(divVisible.querySelector("span").textContent === "hello", "Content Rendered");
+		return el;
+	});
+	</script>
+
+</body>
+</html>
