@@ -219,5 +219,124 @@
 	});
 	</script>
 
+	<!-- Template Root Access in Loop -->
+	<div id="template-root-loop" class="test-case">
+		<h3>7. Template Root Access in Loop</h3>
+		<vivy:template name="item-with-root">
+			<li>
+				<span class="item-text" .text></span>
+				<span class="global-label" $.label></span>
+			</li>
+		</vivy:template>
+		<ul .items[]>
+			<t:item-with-root></t:item-with-root>
+		</ul>
+	</div>
+	<script>
+	runTest("Template Root Access in Loop", document.getElementById("template-root-loop"), async (el) => {
+		const app = vivy(el, {
+			label: "Global",
+			items: [
+				{ text: "Item 1" },
+				{ text: "Item 2" },
+				{ text: "Item 3" }
+			]
+		});
+
+		const itemTexts = Array.from(el.querySelectorAll('.item-text')).map(s => s.textContent);
+		const globalLabels = Array.from(el.querySelectorAll('.global-label')).map(s => s.textContent);
+
+		assert(itemTexts.join(',') === "Item 1,Item 2,Item 3", "Item texts correct");
+		assert(globalLabels.join(',') === "Global,Global,Global", "All labels show root value");
+
+		// Update root label
+		app.label = "Updated Global";
+		const updatedLabels = Array.from(el.querySelectorAll('.global-label')).map(s => s.textContent);
+		assert(updatedLabels.join(',') === "Updated Global,Updated Global,Updated Global", "Root update reflects in all items");
+
+		// Update individual item
+		app.items[1].text = "Modified Item 2";
+		const newTexts = Array.from(el.querySelectorAll('.item-text')).map(s => s.textContent);
+		assert(newTexts[1] === "Modified Item 2", "Individual item update works");
+	});
+	</script>
+
+	<!-- Template Referencing Another Template -->
+	<div id="template-ref-template" class="test-case">
+		<h3>8. Template Referencing Another Template</h3>
+		<vivy:template name="inner-template">
+			<span class="inner" .value></span>
+		</vivy:template>
+		<vivy:template name="outer-template">
+			<div class="outer">
+				<strong .label></strong>
+				<t:inner-template .data></t:inner-template>
+			</div>
+		</vivy:template>
+		<t:outer-template></t:outer-template>
+	</div>
+	<script>
+	runTest("Template Referencing Another Template", document.getElementById("template-ref-template"), async (el) => {
+		const app = vivy(el, {
+			label: "Outer Label",
+			data: { value: "Inner Value" }
+		});
+
+		const label = el.querySelector('strong');
+		const inner = el.querySelector('.inner');
+
+		assert(label.textContent === "Outer Label", "Outer template rendered");
+		assert(inner.textContent === "Inner Value", "Nested template rendered");
+
+		// Update outer
+		app.label = "New Label";
+		assert(label.textContent === "New Label", "Outer update");
+
+		// Update inner
+		app.data.value = "New Inner";
+		assert(inner.textContent === "New Inner", "Inner update");
+
+		// Replace data object
+		app.data = { value: "Replaced" };
+		assert(inner.textContent === "Replaced", "Inner replacement");
+	});
+	</script>
+
+	<!-- Template with Method Calls -->
+	<div id="template-method-calls" class="test-case">
+		<h3>9. Template Method Calls in Attribute Templates</h3>
+		<vivy:template name="formatted-item">
+			<div class="item-box">
+				<span class="formatted" data-upper.="`${_.text?.toUpperCase()}`"></span>
+				<span class="length" data-len.="`${_.text?.length}`"></span>
+			</div>
+		</vivy:template>
+		<div .items[]>
+			<t:formatted-item></t:formatted-item>
+		</div>
+	</div>
+	<script>
+	runTest("Template Method Calls", document.getElementById("template-method-calls"), async (el) => {
+		const app = vivy(el, {
+			items: [
+				{ text: "hello" },
+				{ text: "world" }
+			]
+		});
+
+		const uppers = Array.from(el.querySelectorAll('.formatted')).map(s => s.getAttribute('data-upper'));
+		const lengths = Array.from(el.querySelectorAll('.length')).map(s => s.getAttribute('data-len'));
+
+		assert(uppers.join(',') === "HELLO,WORLD", "toUpperCase() works in template");
+		assert(lengths.join(',') === "5,5", "length property works in template");
+
+		// Update item
+		app.items[0].text = "updated";
+		await wait(10);
+		const newUppers = Array.from(el.querySelectorAll('.formatted')).map(s => s.getAttribute('data-upper'));
+		assert(newUppers[0] === "UPDATED", "Method call updates");
+	});
+	</script>
+
 </body>
 </html>

@@ -153,5 +153,96 @@
 	});
 	</script>
 
+	<!-- Form Submit Event -->
+	<div id="form-submit-test" class="test-case">
+		<h3>5. Form Submit Event</h3>
+		<form @submit=".onSubmit">
+			<input type="text" class="user-input" value="test user">
+			<button type="submit">Submit</button>
+		</form>
+		<span class="result" .result></span>
+	</div>
+	<script>
+	runTest("Form Submit Event", document.getElementById("form-submit-test"), async (el) => {
+		let submitted = false;
+		vivy(el, {
+			result: "",
+			onSubmit(event, ctx) {
+				event.preventDefault();
+				submitted = true;
+				ctx.result = "Submitted";
+			}
+		});
+
+		const form = el.querySelector('form');
+		const result = el.querySelector('.result');
+
+		form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+		assert(submitted, "Submit handler was called");
+		assert(result.textContent === "Submitted", `Submit result: ${result.textContent}`);
+	});
+	</script>
+
+	<!-- Form Reset Event -->
+	<div id="form-reset-test" class="test-case">
+		<h3>6. Form Reset Event</h3>
+		<form @reset=".onReset">
+			<input type="text" name="field" value="initial">
+			<button type="reset">Reset</button>
+		</form>
+		<span class="reset-count" .count></span>
+	</div>
+	<script>
+	runTest("Form Reset Event", document.getElementById("form-reset-test"), async (el) => {
+		vivy(el, {
+			count: 0,
+			onReset(_, ctx) {
+				ctx.count++;
+			}
+		});
+
+		const form = el.querySelector('form');
+		const count = el.querySelector('.reset-count');
+
+		assert(count.textContent === "0", "Init reset count");
+
+		form.dispatchEvent(new Event('reset'));
+		assert(count.textContent === "1", "After first reset");
+
+		form.dispatchEvent(new Event('reset'));
+		assert(count.textContent === "2", "After second reset");
+	});
+	</script>
+
+	<!-- Input Invalid Event -->
+	<div id="input-invalid-test" class="test-case">
+		<h3>7. Input Invalid Event</h3>
+		<form>
+			<input type="email" required @invalid=".onInvalid" value="">
+			<button type="submit">Submit</button>
+		</form>
+		<span class="invalid-msg" .message></span>
+	</div>
+	<script>
+	runTest("Input Invalid Event", document.getElementById("input-invalid-test"), async (el) => {
+		vivy(el, {
+			message: "",
+			onInvalid(_, ctx) {
+				ctx.message = "Validation failed";
+			}
+		});
+
+		const input = el.querySelector('input');
+		const msg = el.querySelector('.invalid-msg');
+
+		assert(msg.textContent === "", "Init message empty");
+
+		// Trigger invalid event
+		input.dispatchEvent(new Event('invalid'));
+		assert(msg.textContent === "Validation failed", "Invalid handler called");
+	});
+	</script>
+
 </body>
 </html>
