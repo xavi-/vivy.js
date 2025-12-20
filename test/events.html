@@ -101,7 +101,7 @@
 
 			btn.dispatchEvent(new Event("click"));
 
-			assert(warnings.some(w => w[0].includes("Non-function")), "Warns on non-function handler");
+			assert(warnings.some(w => w[0].startsWith("Non-function event-handler")), "Warns on non-function handler");
 		} finally {
 			console.warn = originalWarn;
 		}

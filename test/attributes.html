@@ -169,17 +169,17 @@
 	</div>
 	<script>
 	runTest("Attribute Path Array Error", document.getElementById("attr-array-error-test"), async () => {
-		let threwError = false;
+		let errorMessage = "";
 
 		try {
 			const div = document.createElement("div");
 			div.innerHTML = "<div title.='items[]'></div>";
 			vivy(div, { items: ["a", "b"] });
-		} catch {
-			threwError = true;
+		} catch (e) {
+			errorMessage = e.message;
 		}
 
-		assert(threwError, "Throws on attribute array path");
+		assert(errorMessage.startsWith("Attribute path can't reference arrays"), "Error text correct");
 	});
 	</script>
 

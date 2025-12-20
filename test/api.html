@@ -49,11 +49,11 @@
 	</div>
 	<script>
 	runTest("Non-HTMLElement Argument", document.getElementById("error-test"), async () => {
-		let threwHelpfulError = false;
+		let errorMessage = "";
 		try { vivy({}, {}); }
-		catch(err) { threwHelpfulError = err.message.includes("HTMLElement"); }
+		catch(err) { errorMessage = err.message; }
 
-		assert(threwHelpfulError, "Vivy should throw if first arg is not HTMLElement");
+		assert(errorMessage === "First vivy.js arg must be a HTMLElement", "Error message correct");
 	});
 	</script>
 
@@ -189,34 +189,29 @@
 	</div>
 	<script>
 	runTest("Non-HTMLElement Error", document.getElementById("non-element-test"), async () => {
-		let threwError = false;
 		let errorMessage = "";
 
 		try {
 			vivy(null, {});
 		} catch (e) {
-			threwError = true;
 			errorMessage = e.message;
 		}
 
-		assert(threwError, "Throws on null element");
-		assert(errorMessage.includes("HTMLElement"), "Error mentions HTMLElement");
+		assert(errorMessage === "First vivy.js arg must be a HTMLElement", "Error text correct");
 
-		threwError = false;
 		try {
 			vivy({}, {});
-		} catch {
-			threwError = true;
+		} catch (e) {
+			errorMessage = e.message;
 		}
-		assert(threwError, "Throws on plain object");
+		assert(errorMessage === "First vivy.js arg must be a HTMLElement", "Error text correct");
 
-		threwError = false;
 		try {
 			vivy("div", {});
-		} catch {
-			threwError = true;
+		} catch (e) {
+			errorMessage = e.message;
 		}
-		assert(threwError, "Throws on string");
+		assert(errorMessage === "First vivy.js arg must be a HTMLElement", "Error text correct");
 	});
 	</script>
 
@@ -244,63 +239,57 @@
 	<!-- Show-If Array Error -->
 	<div id="show-if-array-error-test" class="test-case">
 		<h3>11. Show-If Array Error</h3>
+		<span .items[]?></span>
 	</div>
 	<script>
-	runTest("Show-If Array Error", document.getElementById("show-if-array-error-test"), async () => {
-		let threwError = false;
+	runTest("Show-If Array Error", document.getElementById("show-if-array-error-test"), async (el) => {
 		let errorMessage = "";
 
 		try {
-			const div = document.createElement("div");
-			div.innerHTML = "<span .items[]?></span>";
-			vivy(div, { items: [1, 2, 3] });
+			vivy(el, { items: [1, 2, 3] });
 		} catch (e) {
-			threwError = true;
 			errorMessage = e.message;
 		}
 
-		assert(threwError, "Throws on show-if array path");
-		assert(errorMessage.includes("show-if") || errorMessage.includes("array"), "Error mentions show-if or array");
+		assert(errorMessage.startsWith("Can't show-if an array"), "Error text correct");
 	});
 	</script>
 
 	<!-- Assign-to Array Error -->
 	<div id="assign-to-array-error-test" class="test-case">
 		<h3>12. Assign-to Array Error</h3>
+		<input :assign-to="items[]">
 	</div>
 	<script>
-	runTest("Assign-to Array Error", document.getElementById("assign-to-array-error-test"), async () => {
-		let threwError = false;
+	runTest("Assign-to Array Error", document.getElementById("assign-to-array-error-test"), async (el) => {
+		let errorMessage = "";
 
 		try {
-			const div = document.createElement("div");
-			div.innerHTML = "<input :assign-to='items[]'>";
-			vivy(div, { items: [1, 2, 3] });
-		} catch {
-			threwError = true;
+			vivy(el, { items: [1, 2, 3] });
+		} catch (e) {
+			errorMessage = e.message;
 		}
 
-		assert(threwError, "Throws on assign-to array path");
+		assert(errorMessage.startsWith("Can't assign-to an array"), "Error text correct");
 	});
 	</script>
 
 	<!-- Event Handler Path Array Error -->
 	<div id="event-array-error-test" class="test-case">
 		<h3>13. Event Handler Path Array Error</h3>
+		<button @click='handlers[]'>Click</button>
 	</div>
 	<script>
-	runTest("Event Handler Path Array Error", document.getElementById("event-array-error-test"), async () => {
-		let threwError = false;
+	runTest("Event Handler Path Array Error", document.getElementById("event-array-error-test"), async (el) => {
+		let errorMessage = "";
 
 		try {
-			const div = document.createElement("div");
-			div.innerHTML = "<button @click='handlers[]'>Click</button>";
-			vivy(div, { handlers: [() => {}] });
-		} catch {
-			threwError = true;
+			vivy(el, { handlers: [() => {}] });
+		} catch(e) {
+			errorMessage = e.message;
 		}
 
-		assert(threwError, "Throws on event handler array path");
+		assert(errorMessage.startsWith("Event handler path can't reference arrays"), "Error text correct");
 	});
 	</script>
 
@@ -362,14 +351,12 @@
 		try {
 			vivy(el, { first: "a", second: "b" });
 
-			assert(warnings.some(w => w[0].includes("Multiple scope")), "Warns on duplicate scope");
+			assert(warnings.some(w => w[0].startsWith("Multiple scope paths found on element")), "Warns on duplicate scope");
 		} finally {
 			console.warn = originalWarn;
 		}
 	});
 	</script>
-
-
 
 </body>
 </html>
