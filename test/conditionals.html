@@ -27,8 +27,7 @@
 		<strong .!falsy?>all falsy?</strong>
 	</div>
 	<script>
-	runTest("Show/Hide Directive", async () => {
-		const el = document.getElementById("show-hide-test");
+	runTest("Show/Hide Directive", document.getElementById("show-hide-test"), async (el) => {
 		const app = vivy(el, { show: true, arr: [ "a", "b", "c" ], falsy: 0 });
 
 		const show = el.querySelector("#show");
@@ -57,8 +56,6 @@
 
 		app.falsy = null;
 		assert(!isVisible(strong), "Null Falsy Hidden");
-
-		return el;
 	});
 	</script>
 
@@ -68,8 +65,7 @@
 		<div .prop_a.prop_b?><span .prop_a.prop_b></span></div>
 	</div>
 	<script>
-	runTest("Show-If Bug", async () => {
-		const el = document.getElementById("show-if-bug");
+	runTest("Show-If Bug", document.getElementById("show-if-bug"), async (el) => {
 		const app = vivy(el, { prop_a: null });
 
 		const div = el.querySelector("div > div");
@@ -81,7 +77,6 @@
 		const divVisible = el.querySelector("div > div");
 		assert(isVisible(divVisible), "Update Visible");
 		assert(divVisible.querySelector("span").textContent === "hello", "Content Rendered");
-		return el;
 	});
 	</script>
 

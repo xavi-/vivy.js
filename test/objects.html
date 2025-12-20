@@ -25,8 +25,7 @@
 		<div .deep.example2 id="example2"><span .deeper id="deep2"></span></div>
 	</div>
 	<script>
-	runTest("Nested Object", async () => {
-		const el = document.getElementById("nested-test");
+	runTest("Nested Object", document.getElementById("nested-test"), async (el) => {
 		const app = vivy(el, {
 			section: {
 				title: "title",
@@ -84,8 +83,7 @@
 		<div .a.b.c id="ref2"></div>
 	</div>
 	<script>
-	runTest("Duplicate References", async () => {
-		const el = document.getElementById("duplicates-test");
+	runTest("Duplicate References", document.getElementById("duplicates-test"), async (el) => {
 		const app = vivy(el, { a: { b: { c: "abc" } } });
 
 		const ref1 = el.querySelector("#ref1");
@@ -122,8 +120,7 @@
 		<button id="outer" @click=".randomText">outer context</button>
 	</div>
 	<script>
-	runTest("Root References", async () => {
-		const el = document.getElementById("root-ref-test");
+	runTest("Root References", document.getElementById("root-ref-test"), async (el) => {
 		vivy(el, {
 			obj: { text: "hi" },
 			text: "hello",
@@ -158,8 +155,7 @@
 		</div>
 	</div>
 	<script>
-	runTest("Primitive to Object", async () => {
-		const el = document.getElementById("prim-to-obj");
+	runTest("Primitive to Object", document.getElementById("prim-to-obj"), async (el) => {
 		const app = vivy(el, { obj: "name" });
 		const div = el.querySelector("div > div"); // .obj
 
@@ -178,8 +174,7 @@
 		</div>
 	</div>
 	<script>
-	runTest("Null to Object", async () => {
-		const el = document.getElementById("null-to-obj");
+	runTest("Null to Object", document.getElementById("null-to-obj"), async (el) => {
 		const app = vivy(el, {});
 
 		// .obj might be hidden
@@ -201,8 +196,7 @@
 		</div>
 	</div>
 	<script>
-	runTest("Null to Nested Object", async () => {
-		const el = document.getElementById("null-to-nested-obj");
+	runTest("Null to Nested Object", document.getElementById("null-to-nested-obj"), async (el) => {
 		const app = vivy(el, {});
 
 		assert(el.querySelector("span") === null, "Init Null");
@@ -221,8 +215,7 @@
 		<span class="b-name" .b.name></span>
 	</div>
 	<script>
-	runTest("Same Object, Different Paths", async () => {
-		const el = document.getElementById('same-obj-diff-paths');
+	runTest("Same Object, Different Paths", document.getElementById('same-obj-diff-paths'), async (el) => {
 		const obj = { name: "initial" };
 		const app = vivy(el, { a: obj, b: obj });
 
@@ -238,8 +231,6 @@
 		assert(aName.textContent === "updated", `Update A: ${aName.textContent}`);
 		// This is EXPECTED TO FAIL if my theory is correct
 		assert(bName.textContent === "updated", `Update B (via shared obj): ${bName.textContent}`);
-
-		return el;
 	});
 	</script>
 </body>

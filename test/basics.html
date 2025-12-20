@@ -17,8 +17,7 @@
 		<div .basic></div>
 	</div>
 	<script>
-	runTest("Basic Text Binding", async () => {
-		const el = document.getElementById("basic-test");
+	runTest("Basic Text Binding", document.getElementById("basic-test"), async (el) => {
 		const app = vivy(el, { basic: "hi" });
 		const div = el.querySelector("div");
 
@@ -46,8 +45,7 @@
 		<div id="style" style.=".is_object"></div>
 	</div>
 	<script>
-	runTest("Attribute Binding", async () => {
-		const el = document.getElementById("attr-test");
+	runTest("Attribute Binding", document.getElementById("attr-test"), async (el) => {
 		const data = {
 			attr: "hello",
 			number: 52,
@@ -99,8 +97,7 @@
 		<a id="an1" href.="`mailto:${_.url}`">Hello</a>
 	</div>
 	<script>
-	runTest("Attribute Template", async () => {
-		const el = document.getElementById("attr-template-test");
+	runTest("Attribute Template", document.getElementById("attr-template-test"), async (el) => {
 		const app = vivy(el, { url: "http://yahoo.com" });
 		const a = el.querySelector("#an1");
 
@@ -120,8 +117,7 @@
 		<textarea :assign-to=".assigned" id="assigned"></textarea>
 	</div>
 	<script>
-	runTest("Basic Inputs", async () => {
-		const el = document.getElementById("input-test");
+	runTest("Basic Inputs", document.getElementById("input-test"), async (el) => {
 		const app = vivy(el, {
 			input: "hi",
 			named: "hey",
@@ -161,8 +157,7 @@
 		<label><input name="result" type="radio" value="rab"> rab</label>
 	</div>
 	<script>
-	runTest("Input Radio", async () => {
-		const el = document.getElementById("radio-test");
+	runTest("Input Radio", document.getElementById("radio-test"), async (el) => {
 		const app = vivy(el, { result: "rab" });
 
 		const fab = el.querySelector("[value=fab]");
@@ -188,8 +183,7 @@
 		<input name="date" type="date">
 	</div>
 	<script>
-	runTest("Typed Inputs", async () => {
-		const el = document.getElementById("types-test");
+	runTest("Typed Inputs", document.getElementById("types-test"), async (el) => {
 		// Date handling can be tricky with timezones, using simple ISO date
 		const app = vivy(el, { number: 18, date: new Date("1995-12-17") });
 
@@ -214,8 +208,7 @@
 		<div id="bug-attr-number" title.="`Count: ${_.count}`"></div>
 	</div>
 	<script>
-	runTest("Attribute Helper with Number", async () => {
-		const elContainer = document.getElementById("bug-attr-number-test");
+	runTest("Attribute Helper with Number", document.getElementById("bug-attr-number-test"), async (elContainer) => {
 		const el = elContainer.querySelector("#bug-attr-number");
 		vivy(elContainer, { count: 42 });
 		assert(el.getAttribute("title") === "Count: 42", `Expected 'Count: 42', got '${el.getAttribute("title")}'`);
@@ -228,8 +221,7 @@
 		<div class.="`user-${_.type}`"></div>
 	</div>
 	<script>
-	runTest("HTML Escaping", async () => {
-		const el = document.getElementById("escape-test");
+	runTest("HTML Escaping", document.getElementById("escape-test"), async (el) => {
 		const app = vivy(el, { type: '<script>' });
 		const div = el.querySelector("div");
 
@@ -243,8 +235,6 @@
 
 		app.type = "it's";
 		assert(div.getAttribute("class") === "user-it&#39;s", "Escapes apostrophe");
-
-		return el;
 	});
 	</script>
 
@@ -254,8 +244,7 @@
 		<div style.=".styles"></div>
 	</div>
 	<script>
-	runTest("Map Data Type", async () => {
-		const el = document.getElementById("map-test");
+	runTest("Map Data Type", document.getElementById("map-test"), async (el) => {
 		const mapStyles = new Map([["color", "red"], ["font-size", "14px"]]);
 		vivy(el, { styles: mapStyles });
 
@@ -264,8 +253,6 @@
 
 		assert(style.includes("color: red"), "Map entry 1");
 		assert(style.includes("font-size: 14px"), "Map entry 2");
-
-		return el;
 	});
 	</script>
 
@@ -276,8 +263,7 @@
 		<input readonly.=".isReadonly">
 	</div>
 	<script>
-	runTest("Boolean Attribute Handling", async () => {
-		const el = document.getElementById("bool-attr-test");
+	runTest("Boolean Attribute Handling", document.getElementById("bool-attr-test"), async (el) => {
 		const app = vivy(el, { isDisabled: true, isReadonly: false });
 
 		const btn = el.querySelector("button");
@@ -291,8 +277,6 @@
 
 		app.isReadonly = true;
 		assert(input.hasAttribute("readonly"), "readonly toggled on");
-
-		return el;
 	});
 	</script>
 

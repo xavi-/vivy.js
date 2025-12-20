@@ -20,8 +20,7 @@
 		<p class="t1-c" .message></p>
 	</div>
 	<script>
-	runTest("Multiple Text Bindings", async () => {
-		const el = document.getElementById("test-1");
+	runTest("Multiple Text Bindings", document.getElementById("test-1"), async (el) => {
 		const app = vivy(el, { message: "Initial" });
 
 		const a = el.querySelector('.t1-a');
@@ -50,8 +49,7 @@
 		<div class="t2-attr" title.=".count">Hover me</div>
 	</div>
 	<script>
-	runTest("Attr and Text Binding Mix", async () => {
-		const el = document.getElementById("test-2");
+	runTest("Attr and Text Binding Mix", document.getElementById("test-2"), async (el) => {
 		const app = vivy(el, { count: 10 });
 
 		const input = el.querySelector('.t2-input');
@@ -90,8 +88,7 @@
 		</div>
 	</div>
 	<script>
-	runTest("Nested Object Multi-Binding", async () => {
-		const el = document.getElementById("test-3");
+	runTest("Nested Object Multi-Binding", document.getElementById("test-3"), async (el) => {
 		const app = vivy(el, { user: { first: "John", last: "Doe" } });
 
 		const first1 = el.querySelector('.t3-first');
@@ -127,8 +124,7 @@
 		</div>
 	</div>
 	<script>
-	runTest("Multiple Lists", async () => {
-		const el = document.getElementById("test-4");
+	runTest("Multiple Lists", document.getElementById("test-4"), async (el) => {
 		const app = vivy(el, { tags: ["a", "b"] });
 
 		const listA = el.querySelector('.list-a');

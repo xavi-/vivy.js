@@ -33,8 +33,7 @@
 		</div>
 	</div>
 	<script>
-	runTest("Basic Template", async () => {
-		const el = document.getElementById("template-basic-test");
+	runTest("Basic Template", document.getElementById("template-basic-test"), async (el) => {
 		const app = vivy(el, { text: "text" });
 
 		const originalSpans = Array.from(el.querySelectorAll(".original p span"));
@@ -55,7 +54,6 @@
 		app.text = "text too";
 		assert(originalSpans[0].textContent === "text too", "Update Original");
 		assert(originalSpans[1].textContent === "text too", "Update Instance");
-		return el;
 	});
 	</script>
 
@@ -73,8 +71,7 @@
 		</ul>
 	</div>
 	<script>
-	runTest("Recursive Template", async () => {
-		const el = document.getElementById("template-tree-test");
+	runTest("Recursive Template", document.getElementById("template-tree-test"), async (el) => {
 		const app = vivy(el, {
 			name: "root",
 			children: [],
@@ -107,8 +104,6 @@
 		assert(app.children.length === 1, "Root has 1 child");
 		assert(app.children[0].name === "child1", "Child1 Name");
 		assert(app.children[0].children.length === 1, "Child1 has 1 child");
-
-		return el;
 	});
 	</script>
 
@@ -121,8 +116,7 @@
 		</vivy:template>
 	</div>
 	<script>
-	runTest("Template Scope", async () => {
-		const el = document.getElementById("template-scope-test");
+	runTest("Template Scope", document.getElementById("template-scope-test"), async (el) => {
 		const app = vivy(el, { info: { name: "emery" } });
 		const span = el.querySelector("span");
 
@@ -130,8 +124,6 @@
 
 		app.info.name = "bob";
 		assert(span.textContent === "bob", "Update Scope");
-
-		return el;
 	});
 	</script>
 
@@ -149,8 +141,7 @@
 		</div>
 	</div>
 	<script>
-	runTest("Shared State Bug", async () => {
-		const testRoot = document.getElementById("shared-state-test");
+	runTest("Shared State Bug", document.getElementById("shared-state-test"), async (testRoot) => {
 		const container1 = testRoot.querySelector('#container1');
 		const container2 = testRoot.querySelector('#container2');
 
@@ -172,7 +163,6 @@
 		// We can assert content length to be sure it rendered.
 		assert(container1.textContent.length === count, "App 1 Rendered correctness");
 		assert(container2.textContent.length === count, "App 2 Rendered correctness");
-		return testRoot;
 	});
 	</script>
 	<!-- Template Null Scope -->
@@ -186,8 +176,7 @@
 		</vivy:template>
 	</div>
 	<script>
-	runTest("Template Null Scope", async () => {
-		const el = document.getElementById("template-null-scope-test");
+	runTest("Template Null Scope", document.getElementById("template-null-scope-test"), async (el) => {
 		const app = vivy(el, { parent: null });
 
 		assert(el.querySelector("div span") === null, "Init Null (Hidden)");
@@ -195,7 +184,6 @@
 		app.parent = { info: { name: "emery" } };
 		const span = el.querySelector("span");
 		assert(span && span.textContent === "emery", "Update to valid scope");
-		return el;
 	});
 	</script>
 
@@ -212,8 +200,7 @@
 		</vivy:template>
 	</div>
 	<script>
-	runTest("Template Nested Scope", async () => {
-		const el = document.getElementById("template-nested-scope-test");
+	runTest("Template Nested Scope", document.getElementById("template-nested-scope-test"), async (el) => {
 		const app = vivy(el, { parent: null });
 
 		assert(el.querySelector("span") === null, "Init Null");
@@ -229,7 +216,6 @@
 		await wait(10);
 		const span = el.querySelector("span");
 		assert(span && span.textContent === "emery", "Deep Nested Scope");
-		return el;
 	});
 	</script>
 

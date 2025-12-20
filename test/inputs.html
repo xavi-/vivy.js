@@ -23,8 +23,7 @@
 		</table>
 	</div>
 	<script>
-	runTest("Complex Input (Table)", async () => {
-		const el = document.getElementById("input-complex");
+	runTest("Complex Input (Table)", document.getElementById("input-complex"), async (el) => {
 		const app = vivy(el, [
 			[ 1, 2, 3, 4 ],
 			[ 5, 6, 7, 8 ]
@@ -53,8 +52,7 @@
 		<label><input name="individualB" type="checkbox" value="doo"> moo</label>
 	</div>
 	<script>
-	runTest("Input Checkbox", async () => {
-		const el = document.getElementById("input-checkbox");
+	runTest("Input Checkbox", document.getElementById("input-checkbox"), async (el) => {
 		const app = vivy(el, { groupA: null, individualA: false, individualB: null });
 
 		const woo = el.querySelector("[value=woo]");
@@ -114,8 +112,7 @@
 		</select>
 	</div>
 	<script>
-	runTest("Input Select", async () => {
-		const el = document.getElementById("input-select");
+	runTest("Input Select", document.getElementById("input-select"), async (el) => {
 		const app = vivy(el, { value: null, options: [ "a", "b", "c", "d" ] });
 		const select = el.querySelector("select");
 
@@ -142,8 +139,7 @@
 		</select>
 	</div>
 	<script>
-	runTest("Input Multi-Select", async () => {
-		const el = document.getElementById("input-multiselect");
+	runTest("Input Multi-Select", document.getElementById("input-multiselect"), async (el) => {
 		const app = vivy(el, { values: null, options: [ "a", "b", "c", "d" ] });
 		const select = el.querySelector("select");
 
@@ -173,8 +169,7 @@
 		</select>
 	</div>
 	<script>
-	runTest("Input Root Value", async () => {
-		const el = document.getElementById("input-root-value");
+	runTest("Input Root Value", document.getElementById("input-root-value"), async (el) => {
 		const app = vivy(el, [ "a" ]);
 		const select = el.querySelector("select");
 
@@ -195,8 +190,7 @@
 		<input type="file" :assign-to="file">
 	</div>
 	<script>
-	runTest("File Input Clearing", async () => {
-		const el = document.getElementById("file-input-test");
+	runTest("File Input Clearing", document.getElementById("file-input-test"), async (el) => {
 		const app = vivy(el, { file: null });
 		const input = el.querySelector("input");
 
@@ -206,7 +200,6 @@
 
 		app.file = null;
 		assert(input.value === "", "Null assignment safe");
-		return el;
 	});
 	</script>
 
@@ -216,8 +209,7 @@
 		<input type="week" :assign-to="week">
 	</div>
 	<script>
-	runTest("Week Input", async () => {
-		const el = document.getElementById("week-input-test");
+	runTest("Week Input", document.getElementById("week-input-test"), async (el) => {
 		const now = new Date();
 		const app = vivy(el, { week: now });
 
@@ -227,7 +219,6 @@
 
 		// Verify no errors thrown
 		assert(true, "Week input accepts Date without error");
-		return el;
 	});
 	</script>
 
@@ -238,8 +229,7 @@
 		<input type="time" :assign-to="time">
 	</div>
 	<script>
-	runTest("Date Inputs", async () => {
-		const el = document.getElementById("date-input-test");
+	runTest("Date Inputs", document.getElementById("date-input-test"), async (el) => {
 		const now = new Date();
 		const app = vivy(el, { month: now, time: now });
 
@@ -255,8 +245,6 @@
 		if (inputs[1].valueAsDate) {
 			assert(inputs[1].valueAsDate.getUTCHours() === now.getUTCHours(), "Time input set");
 		}
-
-		return el;
 	});
 	</script>
 
@@ -266,8 +254,7 @@
 		<input type="checkbox" name="toggle">
 	</div>
 	<script>
-	runTest("Checkbox Default Value", async () => {
-		const el = document.getElementById("checkbox-default-test");
+	runTest("Checkbox Default Value", document.getElementById("checkbox-default-test"), async (el) => {
 		const app = vivy(el, { toggle: true });
 
 		const checkbox = el.querySelector("input");
@@ -284,8 +271,6 @@
 		checkbox.checked = false;
 		checkbox.dispatchEvent(new Event("input"));
 		assert(app.toggle === false, "View updates model (false)");
-
-		return el;
 	});
 	</script>
 </body>

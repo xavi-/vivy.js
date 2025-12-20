@@ -17,8 +17,7 @@
 		<button id="btn" @click=".clicker" @mouseup=".upper" @mousemove=".mover">button</button>
 	</div>
 	<script>
-	runTest("Basic Events", async () => {
-		const el = document.getElementById("events-test");
+	runTest("Basic Events", document.getElementById("events-test"), async (el) => {
 		const app = vivy(el, {
 			clicker: (_, obj) => obj.clickerCalls += 1,
 			clickerCalls: 0,
@@ -63,8 +62,7 @@
 		</ul>
 	</div>
 	<script>
-	runTest("Array Item Events", async () => {
-		const el = document.getElementById("array-events");
+	runTest("Array Item Events", document.getElementById("array-events"), async (el) => {
 		const app = vivy(el, {
 			items: [
 				{ id: 1, name: "foo", clicked: "none", click: (_, node) => node.clicked = "foo" },
@@ -92,8 +90,7 @@
 		<button @click=".handler">Click</button>
 	</div>
 	<script>
-	runTest("Non-function Event Handler Warning", async () => {
-		const el = document.getElementById("non-fn-handler-test");
+	runTest("Non-function Event Handler Warning", document.getElementById("non-fn-handler-test"), async (el) => {
 		const warnings = [];
 		const originalWarn = console.warn;
 		console.warn = (...args) => warnings.push(args);
@@ -108,8 +105,6 @@
 		} finally {
 			console.warn = originalWarn;
 		}
-
-		return el;
 	});
 	</script>
 

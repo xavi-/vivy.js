@@ -14,40 +14,32 @@
 	<!-- No-Op Mutation Test -->
 	<div id="noop-test" class="test-case">
 		<h3>1. Identical Value No-Op</h3>
-		<!-- Setup done in script -->
+		<span .text class.="$.attr"></span><span .vals[]></span>
 	</div>
 	<script>
-	runTest("Identical Value No-Op", async () => {
-		const div = document.createElement("div");
-		div.innerHTML = `<span .text class.="$.attr"></span><span .vals[]></span>`;
-
-		// Vivify on detached element
-		const data = vivy(div, { text: "hello", attr: "okay", vals: [ 1, 2, 3 ] });
+	runTest("Identical Value No-Op", document.getElementById("noop-test"), async (el) => {
+		const data = vivy(el, { text: "hello", attr: "okay", vals: [ 1, 2, 3 ] });
 
 		// Observe for mutations
 		let mutationCount = 0;
 		const observer = new MutationObserver((mutations) => {
 			mutationCount += mutations.length;
 		});
-		observer.observe(div, { childList: true, attributes: true, subtree: true });
+		observer.observe(el, { childList: true, attributes: true, subtree: true });
 
 		// Set identical values
 		data.text = "hello";
 		data.attr = "okay";
-		// Arrays are mutable, assignment might trigger?
-		// Vivy might replace if reference changes or content differs.
-		// Original test used `data.vals = data.vals` (same ref) -> no op?
-		// And `data.vals[0] = 1` (same value) -> no op?
-
-		// In Vivy, setting same primitive should be no-op.
 
 		data.vals[0] = 1;
 
-		await wait(10); // Wait for microtasks
+		const tmp = data.vals;
+		data.vals = tmp;
+
+		await wait(1); // Wait for micro-tasks
 		observer.disconnect();
 
 		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
-		return document.getElementById("noop-test");
 	});
 	</script>
 
@@ -56,13 +48,12 @@
 		<h3>2. API Error Handling</h3>
 	</div>
 	<script>
-	runTest("Non-HTMLElement Argument", async () => {
+	runTest("Non-HTMLElement Argument", document.getElementById("error-test"), async () => {
 		let threwHelpfulError = false;
 		try { vivy({}, {}); }
 		catch(err) { threwHelpfulError = err.message.includes("HTMLElement"); }
 
 		assert(threwHelpfulError, "Vivy should throw if first arg is not HTMLElement");
-		return document.getElementById("error-test");
 	});
 	</script>
 
@@ -71,7 +62,7 @@
 		<h3>3. Proxy Spread Behavior</h3>
 	</div>
 	<script>
-	runTest("Proxy Spread", async () => {
+	runTest("Proxy Spread", document.getElementById("spread-test"), async () => {
 		const div = document.createElement("div");
 		const data = vivy(div, {});
 		data.text = "hello";
@@ -84,7 +75,6 @@
 		assert(copy.attr === "okay", "Copy attr");
 		assert(copy.vals.a === 1, "Copy vals.a");
 		assert(copy.vals.b === 2, "Copy vals.b");
-		return document.getElementById("spread-test");
 	});
 	</script>
 
@@ -94,15 +84,13 @@
 		<div id="null-container"><span .field.a.more></span></div>
 	</div>
 	<script>
-	runTest("Nulled Sub-Fields", async () => {
-		const div = document.getElementById("null-container");
-		const data = vivy(div, { field: { a: { more: 1 }, b: 2 } });
+	runTest("Nulled Sub-Fields", document.getElementById("null-field-test"), async (el) => {
+		const data = vivy(el, { field: { a: { more: 1 }, b: 2 } });
 
 		data.field = {};
 
 		// data.field.a should be null/undefined
 		assert(data.field.a == null, "Field.a should be null/undefined after parent reset");
-		return document.getElementById("null-field-test");
 	});
 	</script>
 
@@ -111,7 +99,7 @@
 		<h3>5. Proxy Reflection (ownKeys, has)</h3>
 	</div>
 	<script>
-	runTest("Proxy Reflection", async () => {
+	runTest("Proxy Reflection", document.getElementById("proxy-reflection-test"), async () => {
 		const div = document.createElement("div");
 		const app = vivy(div, { a: 1, b: 2 });
 
@@ -124,7 +112,6 @@
 
 		const json = JSON.stringify(app);
 		assert(json === '{"a":1,"b":2}', "JSON.stringify works");
-		return document.getElementById("proxy-reflection-test");
 	});
 	</script>
 
@@ -135,8 +122,7 @@
 		<div .age></div>
 	</div>
 	<script>
-	runTest("Delete Property", async () => {
-		const el = document.getElementById("delete-property-test");
+	runTest("Delete Property", document.getElementById("delete-property-test"), async (el) => {
 		const app = vivy(el, { name: "John", age: 30 });
 
 		const nameDiv = el.querySelector("div");
@@ -151,8 +137,6 @@
 		app.temp = "test";
 		const result = delete app.temp;
 		assert(result === true, "Delete returns true");
-
-		return el;
 	});
 	</script>
 
@@ -162,7 +146,7 @@
 		<div .user-name></div>
 	</div>
 	<script>
-	runTest("Console Warnings - Near Miss", async () => {
+	runTest("Console Warnings - Near Miss", document.getElementById("warning-test"), async () => {
 		const warnings = [];
 		const originalWarn = console.warn;
 		console.warn = (...args) => warnings.push(args);
@@ -176,7 +160,6 @@
 		} finally {
 			console.warn = originalWarn;
 		}
-		return document.getElementById("warning-test");
 	});
 	</script>
 
@@ -186,9 +169,7 @@
 		<div .message></div>
 	</div>
 	<script>
-	runTest("Vivify Alias", async () => {
-		const el = document.getElementById("vivify-test");
-
+	runTest("Vivify Alias", document.getElementById("vivify-test"), async (el) => {
 		assert(typeof vivify === "function", "vivify is a function");
 		assert(vivify === vivy, "vivify === vivy");
 
@@ -199,8 +180,6 @@
 
 		app.message = "Updated via vivify";
 		assert(div.textContent === "Updated via vivify", "vivify proxy updates work");
-
-		return el;
 	});
 	</script>
 
@@ -209,7 +188,7 @@
 		<h3>9. Non-HTMLElement Error</h3>
 	</div>
 	<script>
-	runTest("Non-HTMLElement Error", async () => {
+	runTest("Non-HTMLElement Error", document.getElementById("non-element-test"), async () => {
 		let threwError = false;
 		let errorMessage = "";
 
@@ -238,8 +217,6 @@
 			threwError = true;
 		}
 		assert(threwError, "Throws on string");
-
-		return document.getElementById("non-element-test");
 	});
 	</script>
 
@@ -249,8 +226,7 @@
 		<div :assign-to="value"></div>
 	</div>
 	<script>
-	runTest("Assign-to on Non-Input Warning", async () => {
-		const el = document.getElementById("assign-non-input-test");
+	runTest("Assign-to on Non-Input Warning", document.getElementById("assign-non-input-test"), async (el) => {
 		const warnings = [];
 		const originalWarn = console.warn;
 		console.warn = (...args) => warnings.push(args);
@@ -262,8 +238,6 @@
 		} finally {
 			console.warn = originalWarn;
 		}
-
-		return el;
 	});
 	</script>
 
@@ -272,7 +246,7 @@
 		<h3>11. Show-If Array Error</h3>
 	</div>
 	<script>
-	runTest("Show-If Array Error", async () => {
+	runTest("Show-If Array Error", document.getElementById("show-if-array-error-test"), async () => {
 		let threwError = false;
 		let errorMessage = "";
 
@@ -287,8 +261,6 @@
 
 		assert(threwError, "Throws on show-if array path");
 		assert(errorMessage.includes("show-if") || errorMessage.includes("array"), "Error mentions show-if or array");
-
-		return document.getElementById("show-if-array-error-test");
 	});
 	</script>
 
@@ -297,7 +269,7 @@
 		<h3>12. Assign-to Array Error</h3>
 	</div>
 	<script>
-	runTest("Assign-to Array Error", async () => {
+	runTest("Assign-to Array Error", document.getElementById("assign-to-array-error-test"), async () => {
 		let threwError = false;
 
 		try {
@@ -309,8 +281,6 @@
 		}
 
 		assert(threwError, "Throws on assign-to array path");
-
-		return document.getElementById("assign-to-array-error-test");
 	});
 	</script>
 
@@ -319,7 +289,7 @@
 		<h3>13. Attribute Path Array Error</h3>
 	</div>
 	<script>
-	runTest("Attribute Path Array Error", async () => {
+	runTest("Attribute Path Array Error", document.getElementById("attr-array-error-test"), async () => {
 		let threwError = false;
 
 		try {
@@ -331,8 +301,6 @@
 		}
 
 		assert(threwError, "Throws on attribute array path");
-
-		return document.getElementById("attr-array-error-test");
 	});
 	</script>
 
@@ -341,7 +309,7 @@
 		<h3>14. Event Handler Path Array Error</h3>
 	</div>
 	<script>
-	runTest("Event Handler Path Array Error", async () => {
+	runTest("Event Handler Path Array Error", document.getElementById("event-array-error-test"), async () => {
 		let threwError = false;
 
 		try {
@@ -353,8 +321,6 @@
 		}
 
 		assert(threwError, "Throws on event handler array path");
-
-		return document.getElementById("event-array-error-test");
 	});
 	</script>
 
@@ -365,8 +331,7 @@
 		<div .count></div>
 	</div>
 	<script>
-	runTest("Proxy Root Update", async () => {
-		const el = document.getElementById("proxy-root-update-test");
+	runTest("Proxy Root Update", document.getElementById("proxy-root-update-test"), async (el) => {
 		const app = vivy(el, { name: "Alice", count: 5 });
 
 		const nameDiv = el.querySelector("div");
@@ -382,8 +347,6 @@
 
 		app({ name: "Charlie", count: 15, extra: "ignored" });
 		assert(nameDiv.textContent === "Charlie", "Another root update");
-
-		return el;
 	});
 	</script>
 
@@ -392,7 +355,7 @@
 		<h3>16. getOwnPropertyDescriptor Support</h3>
 	</div>
 	<script>
-	runTest("getOwnPropertyDescriptor", async () => {
+	runTest("getOwnPropertyDescriptor", document.getElementById("property-descriptor-test"), async () => {
 		const div = document.createElement("div");
 		const app = vivy(div, { name: "test", count: 42 });
 
@@ -402,8 +365,6 @@
 
 		const noDesc = Object.getOwnPropertyDescriptor(app, "nonexistent");
 		assert(noDesc === undefined, "No descriptor for missing prop");
-
-		return document.getElementById("property-descriptor-test");
 	});
 	</script>
 
@@ -413,8 +374,7 @@
 		<div .first :scope=".second"></div>
 	</div>
 	<script>
-	runTest("Duplicate Scope Warning", async () => {
-		const el = document.getElementById("duplicate-scope-test");
+	runTest("Duplicate Scope Warning", document.getElementById("duplicate-scope-test"), async (el) => {
 		const warnings = [];
 		const originalWarn = console.warn;
 		console.warn = (...args) => warnings.push(args);
@@ -426,8 +386,6 @@
 		} finally {
 			console.warn = originalWarn;
 		}
-
-		return el;
 	});
 	</script>
 
@@ -437,8 +395,7 @@
 		<div class="target" .user title.="`Name: ${_?.name}`"></div>
 	</div>
 	<script>
-	runTest("Delete Property Parent Sync", async () => {
-		const el = document.getElementById('delete-attr-sync');
+	runTest("Delete Property Parent Sync", document.getElementById('delete-attr-sync'), async (el) => {
 		const app = vivy(el, { user: { name: "John" } });
 
 		const target = el.querySelector('.target');
@@ -448,8 +405,6 @@
 		delete app.user.name;
 
 		assert(target.getAttribute('title') === "Name: ", `After Delete: ${target.getAttribute('title')}`);
-
-		return el;
 	});
 	</script>
 

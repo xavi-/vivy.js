@@ -19,8 +19,7 @@
 		</ol>
 	</div>
 	<script>
-	runTest("Basic Arrays", async () => {
-		const el = document.getElementById("basic-array");
+	runTest("Basic Arrays", document.getElementById("basic-array"), async (el) => {
 		const app = vivy(el, { grocery_list: [ "a", "b", "c" ] });
 		const ol = el.querySelector("ol");
 
@@ -44,8 +43,7 @@
 		</ul>
 	</div>
 	<script>
-	runTest("Nested Arrays", async () => {
-		const el = document.getElementById("nested-array");
+	runTest("Nested Arrays", document.getElementById("nested-array"), async (el) => {
 		const app = vivy(el, { grid: [ [ "blue", "green" ], [ "green", "blue" ] ] });
 		const ul = el.querySelector("ul");
 
@@ -73,8 +71,7 @@
 		</ul>
 	</div>
 	<script>
-	runTest("Array of Objects", async () => {
-		const el = document.getElementById("obj-array");
+	runTest("Array of Objects", document.getElementById("obj-array"), async (el) => {
 		const app = vivy(el, {
 			classes: [
 				{ students: [ "alex", "blair" ] },
@@ -104,8 +101,7 @@
 		<p .second.2></p>
 	</div>
 	<script>
-	runTest("Complex Array", async () => {
-		const el = document.getElementById("complex-array");
+	runTest("Complex Array", document.getElementById("complex-array"), async (el) => {
 		const app = vivy(el, {
 			first: [ { text: "a" }, { text: "b" }, { text: "c" } ],
 			second: [ "alpha", "beta", "gamma" ]
@@ -134,7 +130,7 @@
 		<div></div>
 	</div>
 	<script>
-	runTest("JSON Serialization", async () => {
+	runTest("JSON Serialization", document.getElementById("json-test"), async () => {
 		// Vivify creates the proxy without needing to be attached essentially for this test
 		const tests = [
 			{ obj: null, json: "null" },
@@ -162,8 +158,7 @@
 	  </ul>
 	</div>
 	<script>
-	runTest("Root Array", async () => {
-	  const el = document.getElementById("root-array-test");
+	runTest("Root Array", document.getElementById("root-array-test"), async (el) => {
 	  const app = vivy(el, { items: ["a", "b", "c"] });
 
 	  const getItems = () => Array.from(el.querySelectorAll("li")).map(li => li.textContent);
@@ -186,8 +181,7 @@
 		</ul>
 	</div>
 	<script>
-	runTest("Root Reference Arrays", async () => {
-		const el = document.getElementById("root-reference-arrays");
+	runTest("Root Reference Arrays", document.getElementById("root-reference-arrays"), async (el) => {
 		const app = vivy(el, {
 			lists: [
 				[ { text: "a" }, { text: "b" }, { text: "c" } ],
@@ -236,8 +230,7 @@
 		<span .items.length></span>
 	</div>
 	<script>
-	runTest("Empty Array Initial State", async () => {
-		const el = document.getElementById("empty-array-test");
+	runTest("Empty Array Initial State", document.getElementById("empty-array-test"), async (el) => {
 		const app = vivy(el, { items: [] });
 
 		const ul = el.querySelector("ul");
@@ -249,8 +242,6 @@
 		app.items.push("first");
 		assert(ul.querySelectorAll("li").length === 1, "Item added");
 		assert(lengthSpan.textContent === "1", "Length updated");
-
-		return el;
 	});
 	</script>
 
