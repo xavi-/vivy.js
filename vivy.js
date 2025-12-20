@@ -573,6 +573,12 @@ const vivy = (() => {
 				nodes = new Set();
 				dataToNodes.set(data, nodes);
 			}
+
+			// Dedup
+			for (const item of nodes) {
+				if (item.node === node) return;
+			}
+
 			nodes.add({ node, path });
 		};
 
@@ -599,6 +605,8 @@ const vivy = (() => {
 			}
 			const proxy = new Proxy(target, {
 				get(_, prop) {
+					if (prop === "__vivy_raw") return getValue(rootData, path);
+
 					const value = getValue(rootData, path);
 					if (value == null) console.warn(`Read property of ${value} (reading '${prop}')`);
 
@@ -609,11 +617,13 @@ const vivy = (() => {
 
 					rtn = value?.[prop];
 					if (Array.isArray(value)) return rtn;
-					if (rtn instanceof Function) rtn = rtn.bind(value);
+					if (rtn instanceof Function) rtn = rtn.bind(proxy);
 
 					return rtn;
 				},
 				set(_, prop, value) {
+					if (value?.__vivy_raw) value = value.__vivy_raw;
+
 					const parent = getValue(rootData, path);
 					if (parent == null)
 						throw new Error(`Cannot set properties of ${value} (reading '${prop}')`);
@@ -640,6 +650,10 @@ const vivy = (() => {
 							}
 						} else if (targetNode.children.has(prop)) {
 							const valNode = targetNode.children.get(prop);
+
+							if (value && typeof value === "object") {
+								registerNode(value, valNode, [...targetPath, prop]);
+							}
 
 							updateDom(valNode, rootData, value, [...targetPath, prop], hydrate);
 

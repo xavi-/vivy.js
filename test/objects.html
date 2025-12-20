@@ -233,5 +233,37 @@
 		assert(bName.textContent === "updated", `Update B (via shared obj): ${bName.textContent}`);
 	});
 	</script>
+
+	<!-- Copying Object Check -->
+	<div id="move-object" class="test-case">
+		<h3>8. Copy Object Check</h3>
+		<div .a>
+			<span class="val" .val></span>
+		</div>
+		<div .b>
+			<span class="val-b" .val></span>
+		</div>
+	</div>
+	<script>
+	runTest("Move Object Check", document.getElementById("move-object"), async (el) => {
+		const obj = { val: "moved" };
+		const app = vivy(el, { a: obj, b: { val: "initial" } });
+
+		const valA = el.querySelector('.val');
+		const valB = el.querySelector('.val-b');
+
+		assert(valA.textContent === "moved", "Init A");
+
+		// Move obj to b
+		app.b = app.a;
+
+		// Update val via A
+		app.a.val = "changes";
+
+		// B should update
+		assert(valB.textContent === "changes", `B reflects changes: ${valB.textContent}`);
+	});
+	</script>
+
 </body>
 </html>
