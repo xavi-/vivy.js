@@ -245,5 +245,28 @@
 	});
 	</script>
 
+	<!-- Array Mutation Methods -->
+	<div id="array-mutation" class="test-case">
+		<h3>9. Array Mutation Methods</h3>
+		<span .list.length></span>
+	</div>
+	<script>
+	runTest("Array Mutation Methods", document.getElementById("array-mutation"), async (el) => {
+		const app = vivy(el, { list: [] });
+		const span = el.querySelector("span");
+
+		assert(span.textContent === "0", "Init Length");
+
+		// Call push on the proxy
+		app.list.push("item");
+
+		// Should trigger update
+		assert(span.textContent === "1", `Length after push: ${span.textContent}`);
+
+		// Call pop
+		app.list.pop();
+		assert(span.textContent === "0", `Length after pop: ${span.textContent}`);
+	});
+	</script>
 </body>
 </html>

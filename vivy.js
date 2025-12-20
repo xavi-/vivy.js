@@ -650,7 +650,7 @@ const vivy = (() => {
 							updateDom(
 								targetNode.children.get("length"),
 								rootData,
-								value,
+								parent.length,
 								[...targetPath, "length"],
 								hydrate,
 							);
