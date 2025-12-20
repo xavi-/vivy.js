@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="../vivy.js"></script>
+	<script src="./test_utils.js"></script>
+	<style>
+		.test-case { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+	</style>
+</head>
+<body>
+	<h1>Attribute Binding Tests</h1>
+
+	<!-- Attribute Binding -->
+	<div id="attr-test" class="test-case">
+		<h3>1. Attribute Binding</h3>
+		<div id="attr" attr.=".attr" normal="okay"></div>
+		<div id="num" num.=".number"></div>
+		<div id="bool" bool.=".boolean"></div>
+		<div id="is-null" is-null.=".is_nullish"></div>
+		<div id="class" class.=".is_array"></div>
+		<div id="style" style.=".is_object"></div>
+	</div>
+	<script>
+	runTest("Attribute Binding", document.getElementById("attr-test"), async (el) => {
+		const data = {
+			attr: "hello",
+			number: 52,
+			boolean: true,
+			is_nullish: null,
+			is_array: [ "a", "b", "c" ],
+			is_object: { border: "1px solid blue", color: "green" },
+		};
+		const app = vivy(el, data);
+
+		const attrDiv = el.querySelector("#attr");
+		const numDiv = el.querySelector("#num");
+		const boolDiv = el.querySelector("#bool");
+		const nullDiv = el.querySelector("#is-null");
+		const classDiv = el.querySelector("#class");
+		const styleDiv = el.querySelector("#style");
+
+		assert(attrDiv.getAttribute("attr") === "hello", "Init Attr");
+		assert(attrDiv.getAttribute("normal") === "okay", "Init Normal");
+		assert(numDiv.getAttribute("num") === "52", "Init Num");
+		assert(boolDiv.hasAttribute("bool") && boolDiv.getAttribute("bool") === "", "Init Bool");
+		assert(!nullDiv.hasAttribute("is-null"), "Init Null");
+		assert(classDiv.getAttribute("class") === "a b c", "Init Class Array");
+
+		const styleVal = styleDiv.getAttribute("style");
+		assert(styleVal.includes("border: 1px solid blue") && styleVal.includes("color: green"), `Init Style: ${styleVal}`);
+
+		app.attr = "hi";
+		assert(attrDiv.getAttribute("attr") === "hi", "Update Attr");
+
+		app.number = 19;
+		assert(numDiv.getAttribute("num") === "19", "Update Num");
+
+		app.boolean = false;
+		assert(!boolDiv.hasAttribute("bool"), "Update Bool (false)");
+
+		app.is_array.pop();
+		assert(classDiv.getAttribute("class") === "a b", "Update Class Array Pop");
+
+		app.is_object["background"] = "red";
+		const newStyle = styleDiv.getAttribute("style");
+		assert(newStyle.includes("background: red"), "Update Style Object");
+	});
+	</script>
+
+	<!-- Attribute Template -->
+	<div id="attr-template-test" class="test-case">
+		<h3>2. Attribute Template</h3>
+		<a id="an1" href.="`mailto:${_.url}`">Hello</a>
+	</div>
+	<script>
+	runTest("Attribute Template", document.getElementById("attr-template-test"), async (el) => {
+		const app = vivy(el, { url: "http://yahoo.com" });
+		const a = el.querySelector("#an1");
+
+		assert(a.getAttribute("href") === "mailto:http://yahoo.com", "Init Href");
+
+		app.url = "http://google.com";
+		assert(a.getAttribute("href") === "mailto:http://google.com", "Update Href");
+	});
+	</script>
+
+	<!-- Attribute Helper with Number -->
+	<div id="bug-attr-number-test" class="test-case">
+		<h3>3. Attribute Helper with Number</h3>
+		<div id="bug-attr-number" title.="`Count: ${_.count}`"></div>
+	</div>
+	<script>
+	runTest("Attribute Helper with Number", document.getElementById("bug-attr-number-test"), async (elContainer) => {
+		const el = elContainer.querySelector("#bug-attr-number");
+		vivy(elContainer, { count: 42 });
+		assert(el.getAttribute("title") === "Count: 42", `Expected 'Count: 42', got '${el.getAttribute("title")}'`);
+	});
+	</script>
+
+	<!-- HTML Escaping -->
+	<div id="escape-test" class="test-case">
+		<h3>4. HTML Escaping in Templates</h3>
+		<div class.="`user-${_.type}`"></div>
+	</div>
+	<script>
+	runTest("HTML Escaping", document.getElementById("escape-test"), async (el) => {
+		const app = vivy(el, { type: '<script>' });
+		const div = el.querySelector("div");
+
+		assert(div.getAttribute("class") === "user-&lt;script&gt;", "Escapes < and >");
+
+		app.type = '"quote"';
+		assert(div.getAttribute("class") === "user-&quot;quote&quot;", "Escapes double quotes");
+
+		app.type = 'a&b';
+		assert(div.getAttribute("class") === "user-a&amp;b", "Escapes ampersand");
+
+		app.type = "it's";
+		assert(div.getAttribute("class") === "user-it&#39;s", "Escapes apostrophe");
+	});
+	</script>
+
+	<!-- Map Data Type Support -->
+	<div id="map-test" class="test-case">
+		<h3>5. Map Data Type (entries)</h3>
+		<div style.=".styles"></div>
+	</div>
+	<script>
+	runTest("Map Data Type", document.getElementById("map-test"), async (el) => {
+		const mapStyles = new Map([["color", "red"], ["font-size", "14px"]]);
+		vivy(el, { styles: mapStyles });
+
+		const div = el.querySelector("div");
+		const style = div.getAttribute("style");
+
+		assert(style.includes("color: red"), "Map entry 1");
+		assert(style.includes("font-size: 14px"), "Map entry 2");
+	});
+	</script>
+
+	<!-- Boolean Attribute Handling -->
+	<div id="bool-attr-test" class="test-case">
+		<h3>6. Boolean Attribute Handling</h3>
+		<button disabled.=".isDisabled">Button</button>
+		<input readonly.=".isReadonly">
+	</div>
+	<script>
+	runTest("Boolean Attribute Handling", document.getElementById("bool-attr-test"), async (el) => {
+		const app = vivy(el, { isDisabled: true, isReadonly: false });
+
+		const btn = el.querySelector("button");
+		const input = el.querySelector("input");
+
+		assert(btn.hasAttribute("disabled"), "disabled=true sets attribute");
+		assert(!input.hasAttribute("readonly"), "readonly=false removes attribute");
+
+		app.isDisabled = false;
+		assert(!btn.hasAttribute("disabled"), "disabled toggled off");
+
+		app.isReadonly = true;
+		assert(input.hasAttribute("readonly"), "readonly toggled on");
+	});
+	</script>
+
+	<!-- Attribute Path Array Error -->
+	<div id="attr-array-error-test" class="test-case">
+		<h3>7. Attribute Path Array Error</h3>
+	</div>
+	<script>
+	runTest("Attribute Path Array Error", document.getElementById("attr-array-error-test"), async () => {
+		let threwError = false;
+
+		try {
+			const div = document.createElement("div");
+			div.innerHTML = "<div title.='items[]'></div>";
+			vivy(div, { items: ["a", "b"] });
+		} catch {
+			threwError = true;
+		}
+
+		assert(threwError, "Throws on attribute array path");
+	});
+	</script>
+
+	<!-- Delete Property Parent Sync -->
+	<div id="delete-attr-sync" class="test-case">
+		<h3>8. Delete Property doesn't update parent attributes</h3>
+		<div class="target" .user title.="`Name: ${_?.name}`"></div>
+	</div>
+	<script>
+	runTest("Delete Property Parent Sync", document.getElementById('delete-attr-sync'), async (el) => {
+		const app = vivy(el, { user: { name: "John" } });
+
+		const target = el.querySelector('.target');
+
+		assert(target.getAttribute('title') === "Name: John", `Init: ${target.getAttribute('title')}`);
+
+		delete app.user.name;
+
+		assert(target.getAttribute('title') === "Name: ", `After Delete: ${target.getAttribute('title')}`);
+	});
+	</script>
+
+	<!-- Attribute Multi-Binding -->
+	<div id="attr-multi-bind" class="test-case">
+		<h3>9. Attribute Multi-Binding</h3>
+		<div .item>
+			<input class="input1" .id type="text">
+			<div class="styled1" title.=".id"></div>
+		</div>
+		<input class="input2" .item.id type="text">
+		<div class="styled2" title.=".item.id"></div>
+	</div>
+	<script>
+	runTest("Attribute Multi-Binding", document.getElementById("attr-multi-bind"), async (el) => {
+		const app = vivy(el, { item: { id: "test-id" } });
+
+		const input1 = el.querySelector('.input1');
+		const input2 = el.querySelector('.input2');
+		const styled1 = el.querySelector('.styled1');
+		const styled2 = el.querySelector('.styled2');
+
+		// Check initial
+		assert(input1.value === "test-id", `Init Input1: ${input1.value}`);
+		assert(input2.value === "test-id", `Init Input2: ${input2.value}`);
+		assert(styled1.getAttribute('title') === "test-id", `Init Styled1: ${styled1.getAttribute('title')}`);
+		assert(styled2.getAttribute('title') === "test-id", `Init Styled2: ${styled2.getAttribute('title')}`);
+
+		// Update via model
+		app.item.id = "new-id";
+
+		assert(input1.value === "new-id", `Model Update Input1: ${input1.value}`);
+		assert(input2.value === "new-id", `Model Update Input2: ${input2.value}`);
+		assert(styled1.getAttribute('title') === "new-id", `Model Update Styled1: ${styled1.getAttribute('title')}`);
+		assert(styled2.getAttribute('title') === "new-id", `Model Update Styled2: ${styled2.getAttribute('title')}`);
+
+		// Update via scoped input
+		input1.value = "input1-update";
+		input1.dispatchEvent(new Event('input'));
+
+		assert(input2.value === "input1-update", `Scoped Input Update Input2: ${input2.value}`);
+		assert(styled1.getAttribute('title') === "input1-update", `Scoped Input Update Styled1`);
+		assert(styled2.getAttribute('title') === "input1-update", `Scoped Input Update Styled2`);
+
+		// Update via direct path input
+		input2.value = "input2-update";
+		input2.dispatchEvent(new Event('input'));
+
+		assert(input1.value === "input2-update", `Direct Input Update Input1: ${input1.value}`);
+		assert(styled1.getAttribute('title') === "input2-update", `Direct Input Update Styled1`);
+		assert(styled2.getAttribute('title') === "input2-update", `Direct Input Update Styled2`);
+	});
+	</script>
+
+	<!-- Attr and Text Binding Mix -->
+	<div id="test-mix" class="test-case">
+		<h3>10. Attr and Text Binding Mix</h3>
+		<input class="t2-input" .count type="number">
+		<span class="t2-text" .count></span>
+		<div class="t2-attr" title.=".count">Hover me</div>
+	</div>
+	<script>
+	runTest("Attr and Text Binding Mix", document.getElementById("test-mix"), async (el) => {
+		const app = vivy(el, { count: 10 });
+
+		const input = el.querySelector('.t2-input');
+		const text = el.querySelector('.t2-text');
+		const attr = el.querySelector('.t2-attr');
+
+		// Check initial
+		assert(input.value === "10", `Init Input: ${input.value}`);
+		assert(text.textContent === "10", `Init Text: ${text.textContent}`);
+		assert(attr.getAttribute('title') === "10", `Init Attr: ${attr.getAttribute('title')}`);
+
+		// Update Model
+		app.count = 20;
+
+		assert(input.value === "20", `Model Update Input: ${input.value}`);
+		assert(text.textContent === "20", `Model Update Text: ${text.textContent}`);
+		assert(attr.getAttribute('title') === "20", `Model Update Attr: ${attr.getAttribute('title')}`);
+
+		// Update Input (Two-way binding)
+		input.value = "30";
+		input.dispatchEvent(new Event('input')); // Trigger update
+
+		assert(app.count === 30, `View Update Model: ${app.count}`);
+		assert(text.textContent === "30", `View Update Text: ${text.textContent}`);
+		assert(attr.getAttribute('title') === "30", `View Update Attr: ${attr.getAttribute('title')}`);
+	});
+	</script>
+
+</body>
+</html>

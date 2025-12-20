@@ -284,29 +284,9 @@
 	});
 	</script>
 
-	<!-- Attribute Path Array Error -->
-	<div id="attr-array-error-test" class="test-case">
-		<h3>13. Attribute Path Array Error</h3>
-	</div>
-	<script>
-	runTest("Attribute Path Array Error", document.getElementById("attr-array-error-test"), async () => {
-		let threwError = false;
-
-		try {
-			const div = document.createElement("div");
-			div.innerHTML = "<div title.='items[]'></div>";
-			vivy(div, { items: ["a", "b"] });
-		} catch {
-			threwError = true;
-		}
-
-		assert(threwError, "Throws on attribute array path");
-	});
-	</script>
-
 	<!-- Event Handler Path Array Error -->
 	<div id="event-array-error-test" class="test-case">
-		<h3>14. Event Handler Path Array Error</h3>
+		<h3>13. Event Handler Path Array Error</h3>
 	</div>
 	<script>
 	runTest("Event Handler Path Array Error", document.getElementById("event-array-error-test"), async () => {
@@ -326,7 +306,7 @@
 
 	<!-- Proxy Root Update -->
 	<div id="proxy-root-update-test" class="test-case">
-		<h3>15. Proxy Root Update (Call as Function)</h3>
+		<h3>14. Proxy Root Update (Call as Function)</h3>
 		<div .name></div>
 		<div .count></div>
 	</div>
@@ -352,7 +332,7 @@
 
 	<!-- getOwnPropertyDescriptor -->
 	<div id="property-descriptor-test" class="test-case">
-		<h3>16. getOwnPropertyDescriptor Support</h3>
+		<h3>15. getOwnPropertyDescriptor Support</h3>
 	</div>
 	<script>
 	runTest("getOwnPropertyDescriptor", document.getElementById("property-descriptor-test"), async () => {
@@ -370,7 +350,7 @@
 
 	<!-- Duplicate Scope Warning -->
 	<div id="duplicate-scope-test" class="test-case">
-		<h3>17. Duplicate Scope Warning</h3>
+		<h3>16. Duplicate Scope Warning</h3>
 		<div .first :scope=".second"></div>
 	</div>
 	<script>
@@ -389,24 +369,7 @@
 	});
 	</script>
 
-	<!-- Delete Property Parent Sync -->
-	<div id="delete-attr-sync" class="test-case">
-		<h3>18. Delete Property doesn't update parent attributes</h3>
-		<div class="target" .user title.="`Name: ${_?.name}`"></div>
-	</div>
-	<script>
-	runTest("Delete Property Parent Sync", document.getElementById('delete-attr-sync'), async (el) => {
-		const app = vivy(el, { user: { name: "John" } });
 
-		const target = el.querySelector('.target');
-
-		assert(target.getAttribute('title') === "Name: John", `Init: ${target.getAttribute('title')}`);
-
-		delete app.user.name;
-
-		assert(target.getAttribute('title') === "Name: ", `After Delete: ${target.getAttribute('title')}`);
-	});
-	</script>
 
 </body>
 </html>

@@ -41,46 +41,11 @@
 	});
 	</script>
 
-	<!-- Case 2: Attribute and Text Binding Mix -->
-	<div id="test-2" class="test-case">
-		<h3>2. Attr and Text Binding Mix</h3>
-		<input class="t2-input" .count type="number">
-		<span class="t2-text" .count></span>
-		<div class="t2-attr" title.=".count">Hover me</div>
-	</div>
-	<script>
-	runTest("Attr and Text Binding Mix", document.getElementById("test-2"), async (el) => {
-		const app = vivy(el, { count: 10 });
 
-		const input = el.querySelector('.t2-input');
-		const text = el.querySelector('.t2-text');
-		const attr = el.querySelector('.t2-attr');
 
-		// Check initial
-		assert(input.value === "10", `Init Input: ${input.value}`);
-		assert(text.textContent === "10", `Init Text: ${text.textContent}`);
-		assert(attr.getAttribute('title') === "10", `Init Attr: ${attr.getAttribute('title')}`);
-
-		// Update Model
-		app.count = 20;
-
-		assert(input.value === "20", `Model Update Input: ${input.value}`);
-		assert(text.textContent === "20", `Model Update Text: ${text.textContent}`);
-		assert(attr.getAttribute('title') === "20", `Model Update Attr: ${attr.getAttribute('title')}`);
-
-		// Update Input (Two-way binding)
-		input.value = "30";
-		input.dispatchEvent(new Event('input')); // Trigger update
-
-		assert(app.count === 30, `View Update Model: ${app.count}`);
-		assert(text.textContent === "30", `View Update Text: ${text.textContent}`);
-		assert(attr.getAttribute('title') === "30", `View Update Attr: ${attr.getAttribute('title')}`);
-	});
-	</script>
-
-	<!-- Case 3: Nested Object Multi-Binding -->
+	<!-- Case 2: Nested Object Multi-Binding -->
 	<div id="test-3" class="test-case">
-		<h3>3. Nested Object Multi-Binding</h3>
+		<h3>2. Nested Object Multi-Binding</h3>
 		<span class="t3-first" .user.first></span>
 		<span class="t3-last" .user.last></span>
 		<div class="t3-full">
@@ -113,9 +78,9 @@
 	});
 	</script>
 
-	<!-- Case 4: Multiple Lists -->
+	<!-- Case 3: Multiple Lists -->
 	<div id="test-4" class="test-case">
-		<h3>4. Multiple Lists (Same Source)</h3>
+		<h3>3. Multiple Lists (Same Source)</h3>
 		<ul class="list-a">
 			<li .tags[]></li>
 		</ul>

@@ -34,83 +34,11 @@
 	});
 	</script>
 
-	<!-- Attribute Binding -->
-	<div id="attr-test" class="test-case">
-		<h3>2. Attribute Binding</h3>
-		<div id="attr" attr.=".attr" normal="okay"></div>
-		<div id="num" num.=".number"></div>
-		<div id="bool" bool.=".boolean"></div>
-		<div id="is-null" is-null.=".is_nullish"></div>
-		<div id="class" class.=".is_array"></div>
-		<div id="style" style.=".is_object"></div>
-	</div>
-	<script>
-	runTest("Attribute Binding", document.getElementById("attr-test"), async (el) => {
-		const data = {
-			attr: "hello",
-			number: 52,
-			boolean: true,
-			is_nullish: null,
-			is_array: [ "a", "b", "c" ],
-			is_object: { border: "1px solid blue", color: "green" },
-		};
-		const app = vivy(el, data);
 
-		const attrDiv = el.querySelector("#attr");
-		const numDiv = el.querySelector("#num");
-		const boolDiv = el.querySelector("#bool");
-		const nullDiv = el.querySelector("#is-null");
-		const classDiv = el.querySelector("#class");
-		const styleDiv = el.querySelector("#style");
-
-		assert(attrDiv.getAttribute("attr") === "hello", "Init Attr");
-		assert(attrDiv.getAttribute("normal") === "okay", "Init Normal");
-		assert(numDiv.getAttribute("num") === "52", "Init Num");
-		assert(boolDiv.hasAttribute("bool") && boolDiv.getAttribute("bool") === "", "Init Bool");
-		assert(!nullDiv.hasAttribute("is-null"), "Init Null");
-		assert(classDiv.getAttribute("class") === "a b c", "Init Class Array");
-
-		const styleVal = styleDiv.getAttribute("style");
-		assert(styleVal.includes("border: 1px solid blue") && styleVal.includes("color: green"), `Init Style: ${styleVal}`);
-
-		app.attr = "hi";
-		assert(attrDiv.getAttribute("attr") === "hi", "Update Attr");
-
-		app.number = 19;
-		assert(numDiv.getAttribute("num") === "19", "Update Num");
-
-		app.boolean = false;
-		assert(!boolDiv.hasAttribute("bool"), "Update Bool (false)");
-
-		app.is_array.pop();
-		assert(classDiv.getAttribute("class") === "a b", "Update Class Array Pop");
-
-		app.is_object["background"] = "red";
-		const newStyle = styleDiv.getAttribute("style");
-		assert(newStyle.includes("background: red"), "Update Style Object");
-	});
-	</script>
-
-	<!-- Attribute Template -->
-	<div id="attr-template-test" class="test-case">
-		<h3>3. Attribute Template</h3>
-		<a id="an1" href.="`mailto:${_.url}`">Hello</a>
-	</div>
-	<script>
-	runTest("Attribute Template", document.getElementById("attr-template-test"), async (el) => {
-		const app = vivy(el, { url: "http://yahoo.com" });
-		const a = el.querySelector("#an1");
-
-		assert(a.getAttribute("href") === "mailto:http://yahoo.com", "Init Href");
-
-		app.url = "http://google.com";
-		assert(a.getAttribute("href") === "mailto:http://google.com", "Update Href");
-	});
-	</script>
 
 	<!-- Basic Inputs -->
 	<div id="input-test" class="test-case">
-		<h3>4. Basic Inputs</h3>
+		<h3>2. Basic Inputs</h3>
 		<input .input id="input">
 		<input name="named" id="named">
 		<input id="value" value.=".value">
@@ -152,7 +80,7 @@
 
 	<!-- Input Radio -->
 	<div id="radio-test" class="test-case">
-		<h3>5. Input Radio</h3>
+		<h3>3. Input Radio</h3>
 		<label><input name="result" type="radio" value="fab"> fab</label>
 		<label><input name="result" type="radio" value="rab"> rab</label>
 	</div>
@@ -178,7 +106,7 @@
 
 	<!-- Non-String Inputs -->
 	<div id="types-test" class="test-case">
-		<h3>6. Typed Inputs</h3>
+		<h3>4. Typed Inputs</h3>
 		<input name="number" type="number">
 		<input name="date" type="date">
 	</div>
@@ -202,83 +130,7 @@
 	});
 	</script>
 
-	<!-- Attribute Helper with Number (from repro_issues.html) -->
-	<div id="bug-attr-number-test" class="test-case">
-		<h3>7. Attribute Helper with Number</h3>
-		<div id="bug-attr-number" title.="`Count: ${_.count}`"></div>
-	</div>
-	<script>
-	runTest("Attribute Helper with Number", document.getElementById("bug-attr-number-test"), async (elContainer) => {
-		const el = elContainer.querySelector("#bug-attr-number");
-		vivy(elContainer, { count: 42 });
-		assert(el.getAttribute("title") === "Count: 42", `Expected 'Count: 42', got '${el.getAttribute("title")}'`);
-	});
-	</script>
 
-	<!-- HTML Escaping -->
-	<div id="escape-test" class="test-case">
-		<h3>8. HTML Escaping in Templates</h3>
-		<div class.="`user-${_.type}`"></div>
-	</div>
-	<script>
-	runTest("HTML Escaping", document.getElementById("escape-test"), async (el) => {
-		const app = vivy(el, { type: '<script>' });
-		const div = el.querySelector("div");
-
-		assert(div.getAttribute("class") === "user-&lt;script&gt;", "Escapes < and >");
-
-		app.type = '"quote"';
-		assert(div.getAttribute("class") === "user-&quot;quote&quot;", "Escapes double quotes");
-
-		app.type = 'a&b';
-		assert(div.getAttribute("class") === "user-a&amp;b", "Escapes ampersand");
-
-		app.type = "it's";
-		assert(div.getAttribute("class") === "user-it&#39;s", "Escapes apostrophe");
-	});
-	</script>
-
-	<!-- Map Data Type Support -->
-	<div id="map-test" class="test-case">
-		<h3>9. Map Data Type (entries)</h3>
-		<div style.=".styles"></div>
-	</div>
-	<script>
-	runTest("Map Data Type", document.getElementById("map-test"), async (el) => {
-		const mapStyles = new Map([["color", "red"], ["font-size", "14px"]]);
-		vivy(el, { styles: mapStyles });
-
-		const div = el.querySelector("div");
-		const style = div.getAttribute("style");
-
-		assert(style.includes("color: red"), "Map entry 1");
-		assert(style.includes("font-size: 14px"), "Map entry 2");
-	});
-	</script>
-
-	<!-- Boolean Attribute Handling -->
-	<div id="bool-attr-test" class="test-case">
-		<h3>10. Boolean Attribute Handling</h3>
-		<button disabled.=".isDisabled">Button</button>
-		<input readonly.=".isReadonly">
-	</div>
-	<script>
-	runTest("Boolean Attribute Handling", document.getElementById("bool-attr-test"), async (el) => {
-		const app = vivy(el, { isDisabled: true, isReadonly: false });
-
-		const btn = el.querySelector("button");
-		const input = el.querySelector("input");
-
-		assert(btn.hasAttribute("disabled"), "disabled=true sets attribute");
-		assert(!input.hasAttribute("readonly"), "readonly=false removes attribute");
-
-		app.isDisabled = false;
-		assert(!btn.hasAttribute("disabled"), "disabled toggled off");
-
-		app.isReadonly = true;
-		assert(input.hasAttribute("readonly"), "readonly toggled on");
-	});
-	</script>
 
 </body>
 </html>
