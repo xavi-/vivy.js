@@ -255,7 +255,28 @@ const vivy = (() => {
 	}
 
 	function toParts(path) {
-		return path?.split(/(?:\.|(?=\[]))/g).filter((p) => p.length > 0) ?? [];
+		if (!path) return [];
+
+		const parts = [];
+		let start = path[0] === "." ? 1 : 0;
+
+		for (let i = 1; i < path.length; i++) {
+			const char = path[i];
+
+			if (char === ".") {
+				if (start !== i) parts.push(path.substring(start, i));
+				start = i + 1;
+			} else if (char === "[" && path[i + 1] === "]") {
+				if (start !== i) parts.push(path.substring(start, i));
+				parts.push("[]");
+
+				i += path[i + 2] === "." ? 2 : 1;
+				start = i + 1;
+			}
+		}
+		if (start !== path.length) parts.push(path.substring(start));
+
+		return parts;
 	}
 	function parseAttributesToPaths(elem) {
 		let scopePath = null,
@@ -818,12 +839,17 @@ Consider using :scope="${traversal.join(".")}" instead
 				if (elem.tagName.startsWith("T:") || elem.tagName.startsWith("TEMPLATE:")) {
 					const name = elem.tagName.split(":")[1].toLowerCase();
 					if (!templates.has(name)) throw new Error(`Unknown template name: ${name}`);
+					if (path.length > 10_000)
+						throw new Error(
+							`Very long path, possible infinite loop: ` +
+								`$.${path.slice(0, 10).join(".")}...[snip]...${path.slice(-10).join(".")}`,
+						);
 					throwOnExcessiveTemplateUsage(name);
 
 					const template = templates.get(name);
 					const insertedElems = insertTemplate(elem, template, scopePath, showIfPath);
 
-					nodes.unshift(...insertedElems.map((elem) => [elem, tree, data, path]));
+					nodes.push(...insertedElems.map((elem) => [elem, tree, data, path]));
 
 					continue;
 				}
