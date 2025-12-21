@@ -416,5 +416,37 @@
 	});
 	</script>
 
+	<!-- toParts Unit Tests -->
+	<div id="to-parts-test" class="test-case">
+		<h3>19. toParts Unit Tests</h3>
+	</div>
+	<script>
+	runTest("toParts Unit Tests", document.getElementById("to-parts-test"), async () => {
+		const toParts = vivy.toParts;
+
+		assert(eq(toParts("key"), ["key"]), "Simple key");
+		assert(eq(toParts("key.prop"), ["key","prop"]), "Simple path");
+
+		assert(eq(toParts("items[]"), ["items","[]"]), "Array notation");
+		assert(eq(toParts("items[].id"), ["items","[]","id"]), "Array notation with prop");
+
+		assert(eq(toParts("$.root"), ["$","root"]), "Absolute path");
+		assert(eq(toParts("$.nested.prop"), ["$","nested","prop"]), "Deep absolute path");
+
+		assert(eq(toParts(""), []), "Empty string");
+		assert(eq(toParts(".key"), ["key"]), "Leading dot");
+		assert(eq(toParts("key."), ["key"]), "Trailing dot");
+		assert(eq(toParts("..key"), ["key"]), "Double dot leading");
+		assert(eq(toParts("a..b"), ["a","b"]), "Double dot middle");
+		assert(eq(toParts("."), []), "Just dot");
+		assert(eq(toParts("[]"), ["[]"]), "Just []");
+		assert(eq(toParts("[][]"), ["[]","[]"]), "Adjacent brackets");
+		assert(eq(toParts("$.[]"), ["$","[]"]), "Absolute array");
+		assert(eq(toParts("..."), []), "Triple dot");
+		assert(eq(toParts(".[]"), ["[]"]), "Top level []")
+		assert(eq(toParts(".[.].[]"), ["[","]", "[]"]), "Partial [");
+	});
+	</script>
+
 </body>
 </html>

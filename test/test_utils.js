@@ -24,6 +24,10 @@ function assert(condition, message) {
 	}
 }
 
+function eq(a, b) {
+	return JSON.stringify(a) === JSON.stringify(b);
+}
+
 function wait(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
