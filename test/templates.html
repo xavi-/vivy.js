@@ -390,5 +390,62 @@
 	});
 	</script>
 
+	<!-- Scope with Templates -->
+	<div id="template-scope-complex" class="test-case">
+		<h3>11. Scope with Templates</h3>
+		<div .user>
+			<t:user-card .details></t:user-card>
+		</div>
+		<vivy:template name="user-card">
+			<div class="card">
+				<span class="name" .name></span>
+				<span class="role" $.role></span>
+			</div>
+		</vivy:template>
+	</div>
+	<script>
+	runTest("Scope with Templates", document.getElementById("template-scope-complex"), async (el) => {
+		const app = vivy(el, {
+			role: "admin",
+			user: {
+				details: {
+					name: "bob"
+				}
+			}
+		});
+
+		const name = el.querySelector(".name");
+		const role = el.querySelector(".role");
+
+		assert(name.textContent === "bob", "Name from nested scope");
+		assert(role.textContent === "admin", "Role from root scope");
+
+		app.user.details.name = "alice";
+		assert(name.textContent === "alice", "Update nested scope");
+
+		app.role = "super-admin";
+		assert(role.textContent === "super-admin", "Update root scope");
+	});
+	</script>
+
+	<!-- Circular Reference with Recursive Template Test -->
+	<div id="circular-ref-test" class="test-case">
+		<h3>12. Circular Reference with Recursive Template</h3>
+			<t:recursive-template .obj></t:recursive-template>
+			<vivy:template name="recursive-template">
+				<t:recursive-template .self></t:recursive-template>
+		</vivy:template>
+	</div>
+	<script>
+	runTest("Circular Reference with Recursive Template", document.getElementById("circular-ref-test"), async (el) => {
+		const obj = {};
+		obj.self = obj; // Circular ref
+
+		let err;
+		try { vivy(el, { obj }); } catch (e) { err = e; }
+		assert(err.message.includes("infinite loop"), `Infinite loop not detected: ${err.message}`);
+	});
+	</script>
+
 </body>
 </html>
