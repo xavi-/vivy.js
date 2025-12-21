@@ -352,5 +352,87 @@
 	});
 	</script>
 
+	<!-- Complex Scope Chains -->
+	<div id="complex-scope-chains" class="test-case">
+		<h3>12. Complex Scope Chains</h3>
+		<div .level1>
+			<span class="l1" .name></span>
+			<div .level2>
+				<span class="l2" .name></span>
+				<span class="l2-root" $.global></span>
+				<div .level3>
+					<span class="l3" .name></span>
+					<span class="l3-l1" $.level1.name></span>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+	runTest("Complex Scope Chains", document.getElementById("complex-scope-chains"), async (el) => {
+		const app = vivy(el, {
+			global: "root-val",
+			level1: {
+				name: "one",
+				level2: {
+					name: "two",
+					level3: {
+						name: "three"
+					}
+				}
+			}
+		});
+
+		const l1 = el.querySelector(".l1");
+		const l2 = el.querySelector(".l2");
+		const l2root = el.querySelector(".l2-root");
+		const l3 = el.querySelector(".l3");
+		const l3l1 = el.querySelector(".l3-l1");
+
+		assert(l1.textContent === "one", "L1 Name");
+		assert(l2.textContent === "two", "L2 Name");
+		assert(l2root.textContent === "root-val", "L2 Root Access");
+		assert(l3.textContent === "three", "L3 Name");
+		assert(l3l1.textContent === "one", "L3 Access to L1 Path");
+
+		// Updates
+		app.level1.name = "ONE";
+		assert(l1.textContent === "ONE", "L1 Update");
+		assert(l3l1.textContent === "ONE", "L3 reflected L1 Update");
+
+		app.level1.level2.level3.name = "THREE";
+		assert(l3.textContent === "THREE", "L3 Update");
+	});
+	</script>
+
+	<!-- Circular Reference Test -->
+	<div id="circular-ref-test" class="test-case">
+		<h3>13. Circular Reference</h3>
+		<div .obj>
+			<span .val></span>
+			<div class="self" .self>
+				<span .val></span>
+			</div>
+		</div>
+	</div>
+	<script>
+	runTest("Circular Reference", document.getElementById("circular-ref-test"), async (el) => {
+		const obj = { val: "safe" };
+		obj.self = obj; // Circular ref
+
+		const app = vivy(el, { obj });
+		const span = el.querySelector("span");
+
+		assert(span.textContent === "safe", "Rendered despite circular ref");
+
+		app.obj.val = "updated";
+		assert(span.textContent === "updated", "Updates work with circular ref");
+
+		assert(app.obj.self.val === "updated", "Access via self works");
+
+		const selfSpan = el.querySelector(".self span");
+		assert(selfSpan.textContent === "updated", "Updates work with circular ref");
+	});
+	</script>
+
 </body>
 </html>
