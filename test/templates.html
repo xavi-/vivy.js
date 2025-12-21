@@ -57,9 +57,61 @@
 	});
 	</script>
 
+	<!-- Error Scenarios -->
+	<div id="error-scenario-tests" class="test-case">
+		<h3>2. Error Scenarios</h3>
+		<div id="tmpl-missing-name">
+			<vivy:template></vivy:template>
+		</div>
+		<div id="tmpl-duplicate">
+			<vivy:template name="dup"></vivy:template>
+			<vivy:template name="dup"></vivy:template>
+		</div>
+		<div id="tmpl-unknown">
+			<t:unknown></t:unknown>
+		</div>
+		<div id="tmpl-recursion">
+			<t:recurse></t:recurse>
+			<vivy:template name="recurse">
+				<t:recurse></t:recurse>
+			</vivy:template>
+		</div>
+	</div>
+	<script>
+	runTest("Error Scenarios - Template Definition", document.getElementById("error-scenario-tests"), async (el) => {
+		// Missing name
+		let err = null;
+		try {
+			vivy(el.querySelector("#tmpl-missing-name"), {});
+		} catch (e) { err = e; }
+		assert(err?.message.includes("Template missing name"), "Detects missing template name");
+
+		// Duplicate name
+		err = null;
+		try {
+			vivy(el.querySelector("#tmpl-duplicate"), {});
+		} catch (e) { err = e; }
+		assert(err?.message.includes("Duplicate template name"), "Detects duplicate template");
+
+		// Unknown template
+		err = null;
+		try {
+			vivy(el.querySelector("#tmpl-unknown"), {});
+		} catch (e) { err = e; }
+		assert(err?.message.includes("Unknown template"), "Detects unknown template ref");
+
+		// Infinite Recursion (Loop limit)
+		err = null;
+		try {
+			vivy(el.querySelector("#tmpl-recursion"), {});
+		} catch (e) { err = e; }
+		assert(err?.message.includes("possible infinite loop"), "Detects infinite template recursion");
+	});
+	</script>
+
 	<!-- Recursive Template -->
 	<div id="template-tree-test" class="test-case">
-		<h3>2. Recursive Template (Tree)</h3>
+		<h3>3. Recursive Template (Tree)</h3>
 		<ul>
 			<li :template="tree">
 				<span .name @dblclick="$.addChild"></span>
@@ -109,7 +161,7 @@
 
 	<!-- Template Scope -->
 	<div id="template-scope-test" class="test-case">
-		<h3>3. Template Scope</h3>
+		<h3>4. Template Scope</h3>
 		<t:embed .info></t:embed>
 		<vivy:template name="embed">
 			Hello <span .name></span>
@@ -129,7 +181,7 @@
 
 	<!-- Shared State Bug (excessive templates) -->
 	<div id="shared-state-test" class="test-case">
-		<h3>4. Shared State Bug (Excessive Templates)</h3>
+		<h3>5. Shared State Bug (Excessive Templates)</h3>
 		<p>Checking if template usage limits or shared state cause issues across instances.</p>
 		<div id="app1">
 			<vivy:template name="t">x</vivy:template>
@@ -167,7 +219,7 @@
 	</script>
 	<!-- Template Null Scope -->
 	<div id="template-null-scope-test" class="test-case">
-		<h3>5. Template Null Scope</h3>
+		<h3>6. Template Null Scope</h3>
 		<div .parent :show-if=".">
 			<t:embed-null .info :show-if="."></t:embed-null>
 		</div>
@@ -189,7 +241,7 @@
 
 	<!-- Template Nested Scope -->
 	<div id="template-nested-scope-test" class="test-case">
-		<h3>6. Template Nested Scope</h3>
+		<h3>7. Template Nested Scope</h3>
 		<div .parent>
 			<t:embed1 .info :show-if="."></t:embed1>
 		</div>
@@ -221,7 +273,7 @@
 
 	<!-- Template Root Access in Loop -->
 	<div id="template-root-loop" class="test-case">
-		<h3>7. Template Root Access in Loop</h3>
+		<h3>8. Template Root Access in Loop</h3>
 		<vivy:template name="item-with-root">
 			<li>
 				<span class="item-text" .text></span>
@@ -263,7 +315,7 @@
 
 	<!-- Template Referencing Another Template -->
 	<div id="template-ref-template" class="test-case">
-		<h3>8. Template Referencing Another Template</h3>
+		<h3>9. Template Referencing Another Template</h3>
 		<vivy:template name="inner-template">
 			<span class="inner" .value></span>
 		</vivy:template>
@@ -304,7 +356,7 @@
 
 	<!-- Template with Method Calls -->
 	<div id="template-method-calls" class="test-case">
-		<h3>9. Template Method Calls in Attribute Templates</h3>
+		<h3>10. Template Method Calls in Attribute Templates</h3>
 		<vivy:template name="formatted-item">
 			<div class="item-box">
 				<span class="formatted" data-upper.="`${_.text?.toUpperCase()}`"></span>
