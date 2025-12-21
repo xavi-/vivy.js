@@ -358,5 +358,63 @@
 	});
 	</script>
 
+	<!-- Scope Shadowing -->
+	<div id="scope-shadowing-test" class="test-case">
+		<h3>17. Scope Shadowing</h3>
+		<div .user>
+			<span class="outer-name" .name></span>
+			<div .profile>
+				<span class="inner-name" .name></span>
+				<span class="root-name" $.user.name></span>
+			</div>
+		</div>
+	</div>
+	<script>
+	runTest("Scope Shadowing", document.getElementById("scope-shadowing-test"), async (el) => {
+		const app = vivy(el, {
+			user: {
+				name: "Outer",
+				profile: {
+					name: "Inner"
+				}
+			}
+		});
+
+		const outer = el.querySelector(".outer-name");
+		const inner = el.querySelector(".inner-name");
+		const root = el.querySelector(".root-name");
+
+		assert(outer.textContent === "Outer", "Outer Name");
+		assert(inner.textContent === "Inner", "Inner Name Shadowed");
+		assert(root.textContent === "Outer", "Root Access Bypass Shadow");
+
+		app.user.profile.name = "UPDATED";
+		assert(inner.textContent === "UPDATED", "Update Shadowed");
+		assert(outer.textContent === "Outer", "Outer Unchanged");
+	});
+	</script>
+
+	<!-- Mixed Bindings and Scopes -->
+	<div id="mixed-bindings-test" class="test-case">
+		<h3>18. Mixed Bindings and Scopes</h3>
+		<div .user title.="`User: ${_.name}`">
+			<span .name></span>
+		</div>
+	</div>
+	<script>
+	runTest("Mixed Bindings and Scopes", document.getElementById("mixed-bindings-test"), async (el) => {
+		const app = vivy(el, { user: { name: "Alice" } });
+		const div = el.querySelector("div");
+		const span = el.querySelector("span");
+
+		assert(div.getAttribute("title") === "User: Alice", "Initial Title");
+		assert(span.textContent === "Alice", "Initial Text");
+
+		app.user.name = "Bob";
+		assert(div.getAttribute("title") === "User: Bob", "Updated Title");
+		assert(span.textContent === "Bob", "Updated Text");
+	});
+	</script>
+
 </body>
 </html>
