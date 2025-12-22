@@ -735,8 +735,11 @@ const vivy = (() => {
 				has(_, key) {
 					return Reflect.has(getValue(rootData, path), key);
 				},
-				getOwnPropertyDescriptor(_, key) {
-					return Reflect.getOwnPropertyDescriptor(getValue(rootData, path), key);
+				getOwnPropertyDescriptor(target, key) {
+					const value = getValue(rootData, path);
+					const desc = Reflect.getOwnPropertyDescriptor(value, key);
+					if (desc) Object.defineProperty(target, key, desc);
+					return desc;
 				},
 			});
 

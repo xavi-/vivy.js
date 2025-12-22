@@ -450,5 +450,32 @@
 	});
 	</script>
 
+	<!-- Non-Enumerable Properties -->
+	<div id="non-enumerable-test" class="test-case">
+		<h3>20. Non-Enumerable Properties</h3>
+		<span .visible></span>
+	</div>
+	<script>
+	runTest("Non-Enumerable Properties", document.getElementById("non-enumerable-test"), async (el) => {
+		const data = { visible: "shown" };
+		Object.defineProperty(data, "hidden", {
+			value: "secret",
+			enumerable: false
+		});
+
+		const app = vivy(el, data);
+
+		assert(el.querySelector("span").textContent === "shown", "Enumerable property works");
+
+		// Non-enumerable should still be accessible
+		assert(app.hidden === "secret", "Non-enumerable property accessible");
+
+		// Object.keys should not include non-enumerable
+		const keys = Object.keys(app);
+		assert(keys.includes("visible"), "Enumerable key present");
+		assert(!keys.includes("hidden"), "Non-enumerable key not in Object.keys");
+	});
+	</script>
+
 </body>
 </html>
