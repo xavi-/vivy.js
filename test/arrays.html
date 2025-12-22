@@ -311,5 +311,35 @@
 	});
 	</script>
 
+	<!-- Very Large Array -->
+	<div id="large-array-test" class="test-case">
+		<h3>11. Very Large Array (1000+ items)</h3>
+		<ul>
+			<li .items[]></li>
+		</ul>
+		<span .items.length></span>
+	</div>
+	<script>
+	runTest("Very Large Array", document.getElementById("large-array-test"), async (el) => {
+		const largeArray = Array.from({ length: 1500 }, (_, i) => `item-${i}`);
+		const app = vivy(el, { items: largeArray });
+
+		const ul = el.querySelector("ul");
+		const lengthSpan = el.querySelector("span");
+
+		assert(ul.querySelectorAll("li").length === 1500, `Large array rendered: ${ul.querySelectorAll("li").length}`);
+		assert(lengthSpan.textContent === "1500", `Length correct: ${lengthSpan.textContent}`);
+
+		// Update middle item
+		app.items[750] = "updated-750";
+		const lis = ul.querySelectorAll("li");
+		assert(lis[750].textContent === "updated-750", `Middle item updated: ${lis[750].textContent}`);
+
+		// Push item
+		app.items.push("new-item");
+		assert(ul.querySelectorAll("li").length === 1501, `After push: ${ul.querySelectorAll("li").length}`);
+	});
+	</script>
+
 </body>
 </html>

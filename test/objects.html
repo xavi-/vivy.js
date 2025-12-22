@@ -434,5 +434,51 @@
 	});
 	</script>
 
+	<!-- Very Deep Nesting (10+ levels) -->
+	<div id="deep-nesting-test" class="test-case">
+		<h3>14. Very Deep Nesting (10 levels)</h3>
+		<div .l1>
+			<div .l2>
+				<div .l3>
+					<div .l4>
+						<div .l5>
+							<div .l6>
+								<div .l7>
+									<div .l8>
+										<div .l9>
+											<div .l10>
+												<span .value></span>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+	runTest("Very Deep Nesting", document.getElementById("deep-nesting-test"), async (el) => {
+		const deepData = {
+			l1: { l2: { l3: { l4: { l5: { l6: { l7: { l8: { l9: { l10: { value: "deep" } } } } } } } } } }
+		};
+
+		const app = vivy(el, deepData);
+		const span = el.querySelector("span");
+
+		assert(span.textContent === "deep", `Init deep value: ${span.textContent}`);
+
+		// Update deepest value
+		app.l1.l2.l3.l4.l5.l6.l7.l8.l9.l10.value = "deeper";
+		assert(span.textContent === "deeper", `Update deep value: ${span.textContent}`);
+
+		// Replace at level 5
+		app.l1.l2.l3.l4.l5 = { l6: { l7: { l8: { l9: { l10: { value: "replaced" } } } } } };
+		assert(span.textContent === "replaced", `Replace mid-level: ${span.textContent}`);
+	});
+	</script>
+
 </body>
 </html>
