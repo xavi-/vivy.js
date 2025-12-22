@@ -106,5 +106,26 @@
 	});
 	</script>
 
+	<!-- Multiple Show-If on Same Element -->
+	<div id="multiple-showif-test" class="test-case">
+		<h3>5. Multiple Show-If Attributes</h3>
+		<div .a? .b? id="multi-showif">Content</div>
+	</div>
+	<script>
+	runTest("Multiple Show-If Attributes", document.getElementById("multiple-showif-test"), async (el) => {
+		const warnings = [];
+		const originalWarn = console.warn;
+		console.warn = (...args) => warnings.push(args);
+
+		try {
+			vivy(el, { a: true, b: false });
+
+			assert(warnings.some(w => w[0]?.includes("show-if")), "Warns about multiple show-if");
+		} finally {
+			console.warn = originalWarn;
+		}
+	});
+	</script>
+
 </body>
 </html>

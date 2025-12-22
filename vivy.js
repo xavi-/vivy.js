@@ -304,6 +304,8 @@ const vivy = (() => {
 			} else if (name.charAt(0) === "@") {
 				eventPaths.push({ event: name.substr(1), path: toParts(value) });
 			} else if (name.charAt(0) === "!" || name.at(-1) === "?") {
+				if (showIfPath) console.warn(`Multiple show-if specifier found`, elem);
+
 				const negated = name.charAt(0) === "!";
 				const start = negated ? 1 : 0,
 					end = name.at(-1) === "?" ? -1 : name.length;
