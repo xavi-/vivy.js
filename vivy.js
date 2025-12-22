@@ -1,10 +1,12 @@
 const vivy = (() => {
 	function html(strings, ...values) {
 		const rtn = [];
+
+		let idx = 0;
 		for (const str of strings) {
 			rtn.push(str);
 
-			const val = values.shift();
+			const val = values[idx++];
 			const escaped = (val == null ? "" : `${val}`)
 				.replace(/&/g, "&amp;")
 				.replace(/</g, "&lt;")
@@ -259,22 +261,23 @@ const vivy = (() => {
 
 		const parts = [];
 		let start = path[0] === "." ? 1 : 0;
+		const len = path.length;
 
-		for (let i = 1; i < path.length; i++) {
+		for (let i = 0; i < len; i++) {
 			const char = path[i];
 
 			if (char === ".") {
 				if (start !== i) parts.push(path.substring(start, i));
 				start = i + 1;
 			} else if (char === "[" && path[i + 1] === "]") {
-				if (start !== i) parts.push(path.substring(start, i));
-				parts.push("[]");
+				if (start !== i) parts.push(path.substring(start, i), "[]");
+				else parts.push("[]");
 
 				i += path[i + 2] === "." ? 2 : 1;
 				start = i + 1;
 			}
 		}
-		if (start !== path.length) parts.push(path.substring(start));
+		if (start !== len) parts.push(path.substring(start));
 
 		return parts;
 	}
@@ -830,7 +833,7 @@ Consider using :scope="${traversal.join(".")}" instead
 			const initialNode = getNode(root, path) ?? hydrateRoot;
 			let node,
 				nodes = elements.map((elem) => [elem, initialNode, initialData, path]);
-			while ((node = nodes.shift())) {
+			while ((node = nodes.pop())) {
 				const [elem, tree, data, path] = node;
 
 				const { scopePath, assignToPath, showIfPath, attrPaths, eventPaths } =
