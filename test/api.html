@@ -427,6 +427,8 @@
 		assert(eq(toParts("key"), ["key"]), "Simple key");
 		assert(eq(toParts("key.prop"), ["key","prop"]), "Simple path");
 
+		assert(eq(toParts("a[]"), ["a", "[]"]), "a[]");
+		assert(eq(toParts("[]a"), ["[]", "a"]), "[]a");
 		assert(eq(toParts("items[]"), ["items","[]"]), "Array notation");
 		assert(eq(toParts("items[].id"), ["items","[]","id"]), "Array notation with prop");
 

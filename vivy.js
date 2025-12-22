@@ -260,9 +260,9 @@ const vivy = (() => {
 		if (!path) return [];
 
 		const parts = [];
-		let start = path[0] === "." ? 1 : 0;
-		const len = path.length;
 
+		const len = path.length;
+		let start = 0;
 		for (let i = 0; i < len; i++) {
 			const char = path[i];
 
