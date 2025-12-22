@@ -623,8 +623,8 @@ const vivy = (() => {
 			};
 
 			const target = updateSelf;
-			// Can't override name or length on functions
 			for (const [key, val] of Object.entries(initValue ?? {})) {
+				// Can't override name or length on functions
 				if (key !== "name" && key !== "length") {
 					target[key] = val;
 				}
