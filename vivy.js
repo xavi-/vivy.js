@@ -928,7 +928,8 @@ Consider using :scope="${traversal.join(".")}" instead
 					if (untraversed.length !== 0) throw new Error(`Can't assign-to an array, ${elem}`);
 
 					const syncer = createSyncer(root, traversed, elem);
-					subtree.elements.push({ element: elem, syncer });
+					// Use unshift to maintain DOM order
+					subtree.elements.unshift({ element: elem, syncer });
 					applyValueToDom(subtree, subData);
 				}
 
