@@ -138,16 +138,16 @@
 			<em .text></em>
 			<strong .$.text></strong>
 			<span $.text></span>
-			<button id="inner" @click="$.randomText">inner context</button>
+			<button id="inner" @click="$.random_text">inner context</button>
 		</div>
-		<button id="outer" @click=".randomText">outer context</button>
+		<button id="outer" @click=".random_text">outer context</button>
 	</div>
 	<script>
 	runTest("Root References", document.getElementById("root-ref-test"), async (el) => {
 		vivy(el, {
 			obj: { text: "hi" },
 			text: "hello",
-			randomText: (_, obj) => obj.text += " okay",
+			random_text: (_, obj) => obj.text += " okay",
 		});
 
 		const em = el.querySelector("em");

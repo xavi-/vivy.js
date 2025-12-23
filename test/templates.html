@@ -114,8 +114,8 @@
 		<h3>3. Recursive Template (Tree)</h3>
 		<ul>
 			<li :template="tree">
-				<span .name @dblclick="$.addChild"></span>
-				<button @click="$.addChild">+</button>
+				<span .name @dblclick="$.add_child"></span>
+				<button @click="$.add_child">+</button>
 				<ul .children.length?>
 					<t:tree .children[]></t:tree>
 				</ul>
@@ -127,7 +127,7 @@
 		const app = vivy(el, {
 			name: "root",
 			children: [],
-			addChild: (_event, node) => node.children.push({
+			add_child: (_event, node) => node.children.push({
 				name: `child${node.children.length + 1}`, children: []
 			})
 		});

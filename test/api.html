@@ -143,18 +143,16 @@
 	<!-- Console Warnings - Near Miss -->
 	<div id="warning-test" class="test-case">
 		<h3>7. Console Warnings (Near Miss)</h3>
-		<div .user-name></div>
+		<div .userName></div>
 	</div>
 	<script>
-	runTest("Console Warnings - Near Miss", document.getElementById("warning-test"), async () => {
+	runTest("Console Warnings - Near Miss", document.getElementById("warning-test"), async (el) => {
 		const warnings = [];
 		const originalWarn = console.warn;
 		console.warn = (...args) => warnings.push(args);
 
 		try {
-			const div2 = document.createElement("div");
-			div2.innerHTML = "<span .username></span>";
-			vivy(div2, { UserName: "Bob" });
+			vivy(el, { userName: "Bob" });
 
 			assert(warnings.some(w => w[0].includes("Near miss")), "Detects mixed-case mismatch");
 		} finally {

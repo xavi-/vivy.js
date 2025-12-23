@@ -19,36 +19,36 @@
 	<script>
 	runTest("Basic Events", document.getElementById("events-test"), async (el) => {
 		const app = vivy(el, {
-			clicker: (_, obj) => obj.clickerCalls += 1,
-			clickerCalls: 0,
+			clicker: (_, obj) => obj.clicker_calls += 1,
+			clicker_calls: 0,
 
-			upper: (_, obj) => obj.upperCalls += 1,
-			upperCalls: 0,
+			upper: (_, obj) => obj.upper_calls += 1,
+			upper_calls: 0,
 
-			mover: (_, obj) => obj.moverCalls += 1,
-			moverCalls: 0,
+			mover: (_, obj) => obj.mover_calls += 1,
+			mover_calls: 0,
 		});
 
 		const btn = el.querySelector("button");
 
 		btn.dispatchEvent(new Event("click"));
-		assert(app.clickerCalls === 1, "Click Handler");
+		assert(app.clicker_calls === 1, "Click Handler");
 
 		btn.dispatchEvent(new Event("mouseup"));
-		assert(app.upperCalls === 1, "Mouseup Handler");
+		assert(app.upper_calls === 1, "Mouseup Handler");
 
 		btn.dispatchEvent(new Event("mousemove"));
-		assert(app.moverCalls === 1, "Mousemove Handler");
+		assert(app.mover_calls === 1, "Mousemove Handler");
 
 		// Update handlers
-		app.clicker = (_, obj) => obj.clickerCalls += 10;
+		app.clicker = (_, obj) => obj.clicker_calls += 10;
 		btn.dispatchEvent(new Event("click"));
-		assert(app.clickerCalls === 11, "Updated Click Handler");
+		assert(app.clicker_calls === 11, "Updated Click Handler");
 
 		// Disable handler (null)
 		app.clicker = null;
 		btn.dispatchEvent(new Event("click"));
-		assert(app.clickerCalls === 11, "Null Click Handler (No effect)");
+		assert(app.clicker_calls === 11, "Null Click Handler (No effect)");
 	});
 	</script>
 
@@ -113,7 +113,7 @@
 		<h3>4. Event Handler Context</h3>
 		<div .sub>
 			<button id="context-btn" @click=".handler">Context Button</button>
-			<button id="root-handler-btn" @click="$.rootHandler">Root Handler Button</button>
+			<button id="root-handler-btn" @click="$.root_handler">Root Handler Button</button>
 		</div>
 	</div>
 	<script>
@@ -135,7 +135,7 @@
 					clicks++;
 				}
 			},
-			rootHandler: function(event, context) {
+			root_handler: function(event, context) {
 				assert(this === rootBtn, "root handler: this should be the element");
 				assert(event === rootClickEvent, "root handler: first argument should be the event");
 				assert(context === app.sub, "root handler: context should be the current scope (.sub)");

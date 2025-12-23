@@ -142,12 +142,12 @@
 	<!-- Boolean Attribute Handling -->
 	<div id="bool-attr-test" class="test-case">
 		<h3>6. Boolean Attribute Handling</h3>
-		<button disabled.=".isDisabled">Button</button>
-		<input readonly.=".isReadonly">
+		<button disabled.=".is_disabled">Button</button>
+		<input readonly.=".is_readonly">
 	</div>
 	<script>
 	runTest("Boolean Attribute Handling", document.getElementById("bool-attr-test"), async (el) => {
-		const app = vivy(el, { isDisabled: true, isReadonly: false });
+		const app = vivy(el, { is_disabled: true, is_readonly: false });
 
 		const btn = el.querySelector("button");
 		const input = el.querySelector("input");
@@ -155,10 +155,10 @@
 		assert(btn.hasAttribute("disabled"), "disabled=true sets attribute");
 		assert(!input.hasAttribute("readonly"), "readonly=false removes attribute");
 
-		app.isDisabled = false;
+		app.is_disabled = false;
 		assert(!btn.hasAttribute("disabled"), "disabled toggled off");
 
-		app.isReadonly = true;
+		app.is_readonly = true;
 		assert(input.hasAttribute("readonly"), "readonly toggled on");
 	});
 	</script>
@@ -293,15 +293,15 @@
 	<!-- Boolean Required Attribute -->
 	<div id="required-attr-test" class="test-case">
 		<h3>11. Required Attribute</h3>
-		<input id="req-input" type="text" required.=".isRequired">
-		<select id="req-select" required.=".isRequired">
+		<input id="req-input" type="text" required.=".is_required">
+		<select id="req-select" required.=".is_required">
 			<option value="">Choose</option>
 			<option value="a">A</option>
 		</select>
 	</div>
 	<script>
 	runTest("Required Attribute", document.getElementById("required-attr-test"), async (el) => {
-		const app = vivy(el, { isRequired: true });
+		const app = vivy(el, { is_required: true });
 
 		const input = el.querySelector('#req-input');
 		const select = el.querySelector('#req-select');
@@ -310,7 +310,7 @@
 		assert(input.required === true, "Input.required property");
 		assert(select.hasAttribute('required'), "Select has required");
 
-		app.isRequired = false;
+		app.is_required = false;
 		assert(!input.hasAttribute('required'), "Input required removed");
 		assert(input.required === false, "Input.required property false");
 		assert(!select.hasAttribute('required'), "Select required removed");
@@ -320,21 +320,21 @@
 	<!-- Boolean Hidden Attribute -->
 	<div id="hidden-attr-test" class="test-case">
 		<h3>12. Hidden Attribute</h3>
-		<div id="hide-target" hidden.=".isHidden">Content</div>
+		<div id="hide-target" hidden.=".is_hidden">Content</div>
 	</div>
 	<script>
 	runTest("Hidden Attribute", document.getElementById("hidden-attr-test"), async (el) => {
-		const app = vivy(el, { isHidden: false });
+		const app = vivy(el, { is_hidden: false });
 		const target = el.querySelector('#hide-target');
 
 		assert(!target.hasAttribute('hidden'), "Not hidden initially");
 		assert(target.hidden === false, "hidden property false");
 
-		app.isHidden = true;
+		app.is_hidden = true;
 		assert(target.hasAttribute('hidden'), "Hidden attribute set");
 		assert(target.hidden === true, "hidden property true");
 
-		app.isHidden = false;
+		app.is_hidden = false;
 		assert(!target.hasAttribute('hidden'), "Hidden removed again");
 	});
 	</script>
@@ -342,19 +342,19 @@
 	<!-- Checked Attribute for Checkbox -->
 	<div id="checked-attr-test" class="test-case">
 		<h3>13. Checked Attribute</h3>
-		<input type="checkbox" id="chk1" checked.=".isChecked">
+		<input type="checkbox" id="chk1" checked.=".is_checked">
 	</div>
 	<script>
 	runTest("Checked Attribute", document.getElementById("checked-attr-test"), async (el) => {
-		const app = vivy(el, { isChecked: true });
+		const app = vivy(el, { is_checked: true });
 		const chk = el.querySelector('#chk1');
 
 		assert(chk.checked === true, "Checked initially");
 
-		app.isChecked = false;
+		app.is_checked = false;
 		assert(chk.checked === false, "Unchecked after update");
 
-		app.isChecked = true;
+		app.is_checked = true;
 		assert(chk.checked === true, "Checked again");
 	});
 	</script>
@@ -364,20 +364,20 @@
 		<h3>14. Selected Attribute on Options</h3>
 		<select id="sel-test">
 			<option value="a">A</option>
-			<option value="b" selected.=".bSelected">B</option>
+			<option value="b" selected.=".b_selected">B</option>
 			<option value="c">C</option>
 		</select>
 	</div>
 	<script>
 	runTest("Selected Attribute", document.getElementById("selected-attr-test"), async (el) => {
-		const app = vivy(el, { bSelected: true });
+		const app = vivy(el, { b_selected: true });
 		const select = el.querySelector('#sel-test');
 		const optionB = select.querySelector('option[value="b"]');
 
 		assert(optionB.selected === true, "Option B selected");
 		assert(select.value === "b", "Select value is b");
 
-		app.bSelected = false;
+		app.b_selected = false;
 		// Note: Removing selected doesn't auto-select another
 		assert(optionB.selected === false, "Option B deselected");
 	});
@@ -387,13 +387,13 @@
 	<div id="multi-bool-attr-test" class="test-case">
 		<h3>15. Multiple Boolean Attributes</h3>
 		<input type="text"
-			disabled.=".isDisabled"
-			readonly.=".isReadonly"
-			required.=".isRequired">
+			disabled.=".is_disabled"
+			readonly.=".is_readonly"
+			required.=".is_required">
 	</div>
 	<script>
 	runTest("Multiple Boolean Attributes", document.getElementById("multi-bool-attr-test"), async (el) => {
-		const app = vivy(el, { isDisabled: true, isReadonly: false, isRequired: true });
+		const app = vivy(el, { is_disabled: true, is_readonly: false, is_required: true });
 		const input = el.querySelector('input');
 
 		assert(input.disabled === true, "Disabled set");
@@ -401,9 +401,9 @@
 		assert(input.required === true, "Required set");
 
 		// Toggle all
-		app.isDisabled = false;
-		app.isReadonly = true;
-		app.isRequired = false;
+		app.is_disabled = false;
+		app.is_readonly = true;
+		app.is_required = false;
 
 		assert(input.disabled === false, "Disabled toggled");
 		assert(input.readOnly === true, "Readonly toggled");
