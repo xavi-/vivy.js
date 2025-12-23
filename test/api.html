@@ -475,5 +475,45 @@
 	});
 	</script>
 
+	<!-- Undefined vs Null -->
+	<div id="undefined-null-test" class="test-case">
+		<h3>10. Undefined vs Null Handling</h3>
+		<span .null_val></span>
+		<span .undefined_val></span>
+		<span .missing_val></span>
+	</div>
+	<script>
+	runTest("Undefined vs Null", document.getElementById("undefined-null-test"), async (el) => {
+		const app = vivy(el, {
+			null_val: null,
+			undefined_val: undefined
+			// missing_val is missing
+		});
+
+		const spans = el.querySelectorAll("span");
+
+		// All should be empty
+		assert(spans[0].textContent === "", `Null renders empty: "${spans[0].textContent}"`);
+		assert(spans[1].textContent === "", `Undefined renders empty: "${spans[1].textContent}"`);
+		assert(spans[2].textContent === "", `Missing renders empty: "${spans[2].textContent}"`);
+
+		app.null_val = "set";
+		app.undefined_val = "set";
+		app.missing_val = "set";
+
+		assert(spans[0].textContent === "set", "Null set");
+		assert(spans[1].textContent === "set", "Undefined set");
+		assert(spans[2].textContent === "set", "Missing set");
+
+		app.null_val = null;
+		app.undefined_val = undefined;
+		delete app.missing_val;
+
+		assert(spans[0].textContent === "", "Null stays empty");
+		assert(spans[1].textContent === "", "Undefined stays empty");
+		assert(spans[2].textContent === "", "Missing stays empty");
+	});
+	</script>
+
 </body>
 </html>

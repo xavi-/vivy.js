@@ -369,5 +369,34 @@
 		assert(app.toggle === false, "View updates model (false)");
 	});
 	</script>
+
+	<!-- Checkbox Group Ordering -->
+	<div id="checkbox-group" class="test-case">
+		<h3>13. Checkbox Group Ordering</h3>
+		<input type="checkbox" .tags value="A">
+		<input type="checkbox" .tags value="B">
+		<input type="checkbox" .tags value="C">
+	</div>
+	<script>
+	runTest("Checkbox Group Ordering", document.getElementById("checkbox-group"), async (el) => {
+		const app = vivy(el, { tags: ["B"] });
+		const [cbA, cbB, cbC] = el.querySelectorAll("input");
+
+		assert(!cbA.checked, "A unchecked");
+		assert(cbB.checked, "B checked");
+		assert(!cbC.checked, "C unchecked");
+
+		// Click A. Expect ["A", "B"] (DOM order)
+		cbA.click();
+		assert(app.tags.join(",") === "A,B", `After Click A: ${app.tags.join(",")}`);
+
+		cbC.click();
+		assert(app.tags.join(",") === "A,B,C", `After Click C: ${app.tags.join(",")}`);
+
+		cbB.click();
+		assert(app.tags.join(",") === "A,C", `After Unclick B: ${app.tags.join(",")}`);
+	});
+	</script>
+
 </body>
 </html>

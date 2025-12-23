@@ -447,5 +447,20 @@
 	});
 	</script>
 
+	<!-- Template with Only Text Nodes -->
+	<div id="template-text-only-test" class="test-case">
+		<h3>13. Template with Only Text Nodes</h3>
+		<vivy:template name="text-only">Just text, no elements</vivy:template>
+		<t:text-only></t:text-only>
+	</div>
+	<script>
+	runTest("Template with Only Text Nodes", document.getElementById("template-text-only-test"), async (el) => {
+		vivy(el, {});
+
+		const text = el.textContent;
+		assert(text.includes("Just text"), `Text-only template rendered: ${text}`);
+	});
+	</script>
+
 </body>
 </html>

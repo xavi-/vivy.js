@@ -341,5 +341,64 @@
 	});
 	</script>
 
+	<!-- Array Reverse and Sort -->
+	<div id="array-reverse-sort" class="test-case">
+		<h3>32. Array Reverse and Sort</h3>
+		<span .numbers[]></span>
+	</div>
+	<script>
+	runTest("Array Reverse and Sort", document.getElementById("array-reverse-sort"), async (el) => {
+		const app = vivy(el, { numbers: [3, 1, 4, 1, 5, 9, 2, 6] });
+
+		const getNumbers = () => Array.from(el.querySelectorAll('span')).map(s => parseInt(s.textContent));
+
+		assert(eq(getNumbers(), [ 3, 1, 4, 1, 5, 9, 2, 6 ]), `Init: ${getNumbers()}`);
+
+		app.numbers.reverse();
+		assert(eq(getNumbers(), [ 6, 2, 9, 5, 1, 4, 1, 3 ]), `Reverse: ${getNumbers()}`);
+
+		app.numbers.sort((a, b) => a - b);
+		assert(eq(getNumbers(), [ 1, 1, 2, 3, 4, 5, 6, 9 ]), `Sort: ${getNumbers()}`);
+
+		app.numbers.fill(10);
+		assert(eq(getNumbers(), [ 10, 10, 10, 10, 10, 10, 10, 10 ]), `Update After Sort: ${getNumbers()[0]}`);
+	});
+	</script>
+
+	<!-- Multiple Array Bindings Same Data -->
+	<div id="multiple-array-bindings-test" class="test-case">
+		<h3>33. Multiple Array Bindings to Same Data</h3>
+		<ul class="list1">
+			<li .shared[]></li>
+		</ul>
+		<ul class="list2">
+			<li .shared[]></li>
+		</ul>
+		<ul class="list3">
+			<li .shared[]></li>
+		</ul>
+	</div>
+	<script>
+	runTest("Multiple Array Bindings Same Data", document.getElementById("multiple-array-bindings-test"), async (el) => {
+		const app = vivy(el, { shared: [1, 2, 3] });
+
+		const nums = (el) => Array.from(el.querySelectorAll("li")).map(li => parseInt(li.textContent));
+
+		const list1 = el.querySelector(".list1");
+		const list2 = el.querySelector(".list2");
+		const list3 = el.querySelector(".list3");
+
+		assert(eq(nums(list1), [ 1, 2, 3 ]), "List1 has 3 nums");
+		assert(eq(nums(list2), [ 1, 2, 3 ]), "List2 has 3 nums");
+		assert(eq(nums(list3), [ 1, 2, 3 ]), "List3 has 3 nums");
+
+		app.shared.push(4);
+
+		assert(eq(nums(list1), [ 1, 2, 3, 4 ]), "List1 has 4 nums");
+		assert(eq(nums(list2), [ 1, 2, 3, 4 ]), "List2 has 4 nums");
+		assert(eq(nums(list3), [ 1, 2, 3, 4 ]), "List3 has 4 nums");
+	});
+	</script>
+
 </body>
 </html>

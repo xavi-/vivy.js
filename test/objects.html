@@ -480,5 +480,26 @@
 	});
 	</script>
 
+	<!-- Object with Prototype Chain -->
+	<div id="prototype-chain-test" class="test-case">
+		<h3>15. Object with Prototype Chain</h3>
+		<span .value></span>
+		<span .inherited></span>
+	</div>
+	<script>
+	runTest("Object with Prototype Chain", document.getElementById("prototype-chain-test"), async (el) => {
+		const proto = { inherited: "from-proto" };
+		const data = Object.create(proto);
+		data.value = "own-value";
+
+		const app = vivy(el, data);
+
+		const spans = el.querySelectorAll("span");
+		assert(spans[0].textContent === "own-value", "Own property");
+
+		assert(app.inherited === "from-proto", "Inherited property accessible");
+	});
+	</script>
+
 </body>
 </html>

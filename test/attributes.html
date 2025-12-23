@@ -411,5 +411,44 @@
 	});
 	</script>
 
+	<!-- HTML Escaping Edge Cases -->
+	<div id="html-escape-edge-test" class="test-case">
+		<h3>9. HTML Escaping Edge Cases</h3>
+		<div class.="`class-${_.text}`"></div>
+	</div>
+	<script>
+	runTest("HTML Escaping Edge Cases", document.getElementById("html-escape-edge-test"), async (el) => {
+		const app = vivy(el, { text: "" });
+		const div = el.querySelector("div");
+
+		// Unicode and emoji
+		app.text = "🚀 test";
+		assert(div.getAttribute("class") === "class-🚀 test", "Emoji preserved");
+
+		// Mixed special chars - test HTML escaping
+		const scriptStart = "<script>";
+		const scriptEnd = "<\/script>";
+		app.text = `${scriptStart}alert('xss')${scriptEnd}`;
+
+		const escaped = div.getAttribute("class");
+		assert(escaped.includes("&lt;"), "Less-than escaped");
+		assert(escaped.includes("&gt;"), "Greater-than escaped");
+		assert(escaped.includes("xss"), "Content preserved");
+
+		// Newlines and tabs
+		app.text = "line1\nline2\ttab";
+		assert(div.getAttribute("class").includes("line1\n"), "Newlines preserved");
+
+		// Null bytes
+		app.text = "test\u0000null";
+		assert(div.getAttribute("class") === "class-test\u0000null", "Null byte handled");
+
+		// Very long string
+		const longStr = "x".repeat(10000);
+		app.text = longStr;
+		assert(div.getAttribute("class").length > 10000, "Very long string handled");
+	});
+	</script>
+
 </body>
 </html>

@@ -71,7 +71,7 @@
 		const app = vivy(el, {});
 		assert(!isVisible(), "Init Hidden");
 
-		const falsyValues = [ false, 0, Number.NaN, "", undefined, null ];
+		const falsyValues = [ false, 0, -0, Number.NaN, "", undefined, null ];
 		for (const value of falsyValues) {
 			app.falsy = value;
 			assert(!isVisible(), `${value} Falsy Hidden`);
