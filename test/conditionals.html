@@ -107,12 +107,12 @@
 	</script>
 
 	<!-- Multiple Show-If on Same Element -->
-	<div id="multiple-showif-test" class="test-case">
+	<div id="multiple-show-if-test" class="test-case">
 		<h3>5. Multiple Show-If Attributes</h3>
-		<div .a? .b? id="multi-showif">Content</div>
+		<div .a? .b? id="multi-show-if">Content</div>
 	</div>
 	<script>
-	runTest("Multiple Show-If Attributes", document.getElementById("multiple-showif-test"), async (el) => {
+	runTest("Multiple Show-If Attributes", document.getElementById("multiple-show-if-test"), async (el) => {
 		const warnings = [];
 		const originalWarn = console.warn;
 		console.warn = (...args) => warnings.push(args);
