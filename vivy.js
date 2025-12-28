@@ -1024,4 +1024,5 @@ Consider using :scope="${traversal.join(".")}" instead
 
 	return vivy;
 })();
+// biome-ignore lint/correctness/noUnusedVariables: alt name for vivy
 const vivify = vivy;
