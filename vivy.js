@@ -592,7 +592,8 @@ const vivy = (() => {
 
 		const templates = findTemplates(elem);
 		const dataToNodes = new WeakMap();
-		const registerNode = (data, node, path) => {
+		// Here to handle duplicate objects and circular references
+		const trackDataToNodes = (data, node, path) => {
 			if (data == null || typeof data !== "object") return;
 			let nodes = dataToNodes.get(data);
 			if (!nodes) {
@@ -600,7 +601,7 @@ const vivy = (() => {
 				dataToNodes.set(data, nodes);
 			}
 
-			// Dedup
+			// prevent duplicates
 			for (const item of nodes) {
 				if (item.node === node) return;
 			}
@@ -676,10 +677,7 @@ const vivy = (() => {
 						} else if (targetNode.children.has(prop)) {
 							const valNode = targetNode.children.get(prop);
 
-							if (value && typeof value === "object") {
-								registerNode(value, valNode, [...targetPath, prop]);
-							}
-
+							trackDataToNodes(value, valNode, [...targetPath, prop]);
 							updateDom(valNode, rootData, value, [...targetPath, prop], hydrate);
 
 							if (valNode.proxy == null) {
@@ -817,9 +815,8 @@ Consider using :scope="${traversal.join(".")}" instead
 					}
 				}
 				subData = subData?.[part];
-				if (subData && typeof subData === "object") {
-					registerNode(subData, subtree, traversed);
-				}
+				trackDataToNodes(subData, subtree, traversed);
+
 				idx += 1;
 			}
 			const untraversed = traversal.slice(idx);
@@ -868,9 +865,7 @@ Consider using :scope="${traversal.join(".")}" instead
 				const curPath = scopeTraversal?.traversed ?? path;
 				const untraversed = scopeTraversal?.untraversed ?? [];
 
-				if (curData && typeof curData === "object") {
-					registerNode(curData, curTree, curPath);
-				}
+				trackDataToNodes(curData, curTree, curPath);
 
 				if (untraversed[0] === "[]") {
 					// Found array path, short-circuit
