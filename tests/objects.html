@@ -316,7 +316,6 @@
 		app.a.name = "updated";
 
 		assert(aName.textContent === "updated", `Update A: ${aName.textContent}`);
-		// This is EXPECTED TO FAIL if my theory is correct
 		assert(bName.textContent === "updated", `Update B (via shared obj): ${bName.textContent}`);
 	});
 	</script>
