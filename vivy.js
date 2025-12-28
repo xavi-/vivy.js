@@ -642,7 +642,6 @@ const vivy = (() => {
 					if (rtn != null && value?.[prop] != null) return rtn;
 
 					rtn = value?.[prop];
-					if (Array.isArray(value)) return rtn;
 					if (rtn instanceof Function) rtn = rtn.bind(proxy);
 
 					return rtn;
