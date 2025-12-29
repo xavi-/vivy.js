@@ -593,7 +593,18 @@ const vivy = (() => {
 		const templates = findTemplates(elem);
 		const dataToNodes = new WeakMap();
 		// Here to handle duplicate objects and circular references
-		const trackDataToNodes = (data, node, path) => {
+		const trackDataToNodes = (data, node, path, prevData = null) => {
+			// Remove old tracking when reassigning to a different object
+			if (prevData != null && prevData !== data && dataToNodes.has(prevData)) {
+				const prevNodes = dataToNodes.get(prevData);
+				for (const item of prevNodes) {
+					if (item.node !== node) continue;
+
+					prevNodes.delete(item);
+					break;
+				}
+			}
+
 			if (data == null || typeof data !== "object") return;
 			let nodes = dataToNodes.get(data);
 			if (!nodes) {
@@ -659,6 +670,7 @@ const vivy = (() => {
 					if (value && node.children.get(prop)?.proxy === value) return true;
 
 					const prevLength = parent.length;
+					const prevValue = parent[prop];
 					parent[prop] = value;
 
 					const nodesToUpdate = dataToNodes.get(parent) || [{ node, path }];
@@ -677,7 +689,7 @@ const vivy = (() => {
 						} else if (targetNode.children.has(prop)) {
 							const valNode = targetNode.children.get(prop);
 
-							trackDataToNodes(value, valNode, [...targetPath, prop]);
+							trackDataToNodes(value, valNode, [...targetPath, prop], prevValue);
 							updateDom(valNode, rootData, value, [...targetPath, prop], hydrate);
 
 							if (valNode.proxy == null) {

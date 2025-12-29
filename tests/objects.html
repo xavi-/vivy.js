@@ -500,5 +500,42 @@
 	});
 	</script>
 
+	<!-- Remove Duplicate Reference -->
+	<div id="remove-duplicate-reference-test" class="test-case">
+		<h3>16. Remove Duplicate Reference</h3>
+		<div id="data1" .data1>
+			<span .a></span>
+			<span .b></span>
+			<span .c></span>
+		</div>
+		<div id="data2" .data2>
+			<span .a></span>
+			<span .b></span>
+			<span .c></span>
+		</div>
+	</div>
+	<script>
+	runTest("Remove Duplicate Reference", document.getElementById("remove-duplicate-reference-test"), async (el) => {
+		const dup = { a: "a", b: "b", c: "c" }
+		const data = vivy(el, {
+			data1: dup,
+			data2: dup
+		});
+
+		data.data1 = { a: "x", b: "y", c: "z" };
+		data.data2.c = "1";
+
+		const data1 = el.querySelectorAll("#data1 span");
+		assert(data1[0].textContent === "x", "Data1 A");
+		assert(data1[1].textContent === "y", "Data1 B");
+		assert(data1[2].textContent === "z", "Data1 C");
+
+		const data2 = el.querySelectorAll("#data2 span");
+		assert(data2[0].textContent === "a", "Data2 A");
+		assert(data2[1].textContent === "b", "Data2 B");
+		assert(data2[2].textContent === "1", "Data2 C");
+	});
+	</script>
+
 </body>
 </html>
