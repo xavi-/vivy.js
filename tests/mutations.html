@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="../vivy.js"></script>
+	<script src="./test_utils.js"></script>
+	<style>
+		.test-case { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+	</style>
+</head>
+<body>
+	<h1>DOM Mutation Prevention Tests</h1>
+	<p>These tests ensure vivy.js doesn't perform needless DOM mutations when values remain unchanged.</p>
+
+	<!-- Basic Text Content No-Op -->
+	<div id="text-noop-test" class="test-case">
+		<h3>1. Text Content No-Op</h3>
+		<span .text></span>
+		<span .number></span>
+		<span .object.name></span>
+	</div>
+	<script>
+	runTest("Text Content No-Op", document.getElementById("text-noop-test"), async (el) => {
+		const data = vivy(el, {
+			text: "hello",
+			number: 42,
+			object: { name: "alice" }
+		});
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, characterData: true, subtree: true });
+
+		// Set identical values
+		data.text = "hello";
+		data.number = 42;
+		data.object.name = "alice";
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Attribute Binding No-Op -->
+	<div id="attr-noop-test" class="test-case">
+		<h3>2. Attribute Binding No-Op</h3>
+		<div class.="$.class_name"></div>
+		<div title.=".title_val"></div>
+		<input disabled.=".is_disabled">
+		<input readonly.=".is_readonly">
+	</div>
+	<script>
+	runTest("Attribute Binding No-Op", document.getElementById("attr-noop-test"), async (el) => {
+		const data = vivy(el, {
+			class_name: "my-class",
+			title_val: "my title",
+			is_disabled: true,
+			is_readonly: false
+		});
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Set identical values
+		data.class_name = "my-class";
+		data.title_val = "my title";
+		data.is_disabled = true;
+		data.is_readonly = false;
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Attribute Template No-Op -->
+	<div id="attr-template-noop-test" class="test-case">
+		<h3>3. Attribute Template No-Op</h3>
+		<a href.="`mailto:${_.email}`"></a>
+		<div title.="`User: ${_.user.name} (${_.user.age})`"></div>
+	</div>
+	<script>
+	runTest("Attribute Template No-Op", document.getElementById("attr-template-noop-test"), async (el) => {
+		const data = vivy(el, {
+			email: "test@example.com",
+			user: { name: "bob", age: 30 }
+		});
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Set identical values (should produce same template result)
+		data.email = "test@example.com";
+		data.user.name = "bob";
+		data.user.age = 30;
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Array No-Op -->
+	<div id="array-noop-test" class="test-case">
+		<h3>4. Array No-Op</h3>
+		<ul>
+			<li .items[]></li>
+		</ul>
+	</div>
+	<script>
+	runTest("Array No-Op", document.getElementById("array-noop-test"), async (el) => {
+		const data = vivy(el, {
+			items: ["a", "b", "c"]
+		});
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, characterData: true, subtree: true });
+
+		// Set identical array element values
+		data.items[0] = "a";
+		data.items[1] = "b";
+		data.items[2] = "c";
+
+		// Re-assign the same array reference
+		const tmp = data.items;
+		data.items = tmp;
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Array of Objects No-Op -->
+	<div id="array-objects-noop-test" class="test-case">
+		<h3>5. Array of Objects No-Op</h3>
+		<ul .users[]>
+			<li .name></li>
+		</ul>
+	</div>
+	<script>
+	runTest("Array of Objects No-Op", document.getElementById("array-objects-noop-test"), async (el) => {
+		const data = vivy(el, {
+			users: [
+				{ name: "alice" },
+				{ name: "bob" },
+				{ name: "charlie" }
+			]
+		});
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, characterData: true, subtree: true });
+
+		// Set identical nested object values
+		data.users[0].name = "alice";
+		data.users[1].name = "bob";
+		data.users[2].name = "charlie";
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Input Value No-Op -->
+	<div id="input-noop-test" class="test-case">
+		<h3>6. Input Value No-Op</h3>
+		<input .text_input type="text">
+		<input .number_input type="number">
+		<input name="check_input" type="checkbox">
+		<select name="select_input">
+			<option value="a">A</option>
+			<option value="b">B</option>
+		</select>
+	</div>
+	<script>
+	runTest("Input Value No-Op", document.getElementById("input-noop-test"), async (el) => {
+		const data = vivy(el, {
+			text_input: "hello",
+			number_input: 42,
+			check_input: true,
+			select_input: "b"
+		});
+
+		// For input elements, we check if the value changed
+		const textInput = el.querySelector("[type=text]");
+		const numberInput = el.querySelector("[type=number]");
+		const checkInput = el.querySelector("[type=checkbox]");
+		const selectInput = el.querySelector("select");
+
+		// Verify initial state
+		assert(textInput.value === "hello", "Init text");
+		assert(numberInput.valueAsNumber === 42, "Init number");
+		assert(checkInput.checked === true, "Init checkbox");
+		assert(selectInput.value === "b", "Init select");
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Set identical values
+		data.text_input = "hello";
+		data.number_input = 42;
+		data.check_input = true;
+		data.select_input = "b";
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Radio Input No-Op -->
+	<div id="radio-noop-test" class="test-case">
+		<h3>7. Radio Input No-Op</h3>
+		<input name="radio_val" type="radio" value="option1">
+		<input name="radio_val" type="radio" value="option2">
+		<input name="radio_val" type="radio" value="option3">
+	</div>
+	<script>
+	runTest("Radio Input No-Op", document.getElementById("radio-noop-test"), async (el) => {
+		const data = vivy(el, { radio_val: "option2" });
+
+		const radios = el.querySelectorAll("input");
+
+		// Verify initial state
+		assert(radios[0].checked === false, "Init radio1");
+		assert(radios[1].checked === true, "Init radio2");
+		assert(radios[2].checked === false, "Init radio3");
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Set identical value
+		data.radio_val = "option2";
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Checkbox Group No-Op -->
+	<div id="checkbox-group-noop-test" class="test-case">
+		<h3>8. Checkbox Group No-Op</h3>
+		<input .tags type="checkbox" value="A">
+		<input .tags type="checkbox" value="B">
+		<input .tags type="checkbox" value="C">
+	</div>
+	<script>
+	runTest("Checkbox Group No-Op", document.getElementById("checkbox-group-noop-test"), async (el) => {
+		const data = vivy(el, { tags: ["A", "C"] });
+
+		const checkboxes = el.querySelectorAll("input");
+
+		// Verify initial state
+		assert(checkboxes[0].checked === true, "Init A checked");
+		assert(checkboxes[1].checked === false, "Init B unchecked");
+		assert(checkboxes[2].checked === true, "Init C checked");
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Set identical array (same values)
+		data.tags = ["A", "C"];
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Show-If No-Op -->
+	<div id="show-if-noop-test" class="test-case">
+		<h3>9. Show-If No-Op</h3>
+		<div .visible?>Visible content</div>
+		<div !.visible?>Hidden content</div>
+	</div>
+	<script>
+	runTest("Show-If No-Op", document.getElementById("show-if-noop-test"), async (el) => {
+		const data = vivy(el, { visible: true });
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, characterData: true, subtree: true });
+
+		// Set identical value
+		data.visible = true;
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Scoped Binding No-Op -->
+	<div id="scope-noop-test" class="test-case">
+		<h3>10. Scoped Binding No-Op</h3>
+		<div .item>
+			<span .name></span>
+			<span $.global_label></span>
+		</div>
+	</div>
+	<script>
+	runTest("Scoped Binding No-Op", document.getElementById("scope-noop-test"), async (el) => {
+		const data = vivy(el, {
+			item: { name: "local item" },
+			global_label: "global"
+		});
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, characterData: true, subtree: true });
+
+		// Set identical scoped values
+		data.item.name = "local item";
+		data.global_label = "global";
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Style Object No-Op -->
+	<div id="style-noop-test" class="test-case">
+		<h3>11. Style Object No-Op</h3>
+		<div style.=".styles"></div>
+	</div>
+	<script>
+	runTest("Style Object No-Op", document.getElementById("style-noop-test"), async (el) => {
+		const data = vivy(el, {
+			styles: { color: "red", "font-size": "14px" }
+		});
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Set identical style values
+		data.styles.color = "red";
+		data.styles["font-size"] = "14px";
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Class Array No-Op -->
+	<div id="class-array-noop-test" class="test-case">
+		<h3>12. Class Array No-Op</h3>
+		<div class.=".classes"></div>
+	</div>
+	<script>
+	runTest("Class Array No-Op", document.getElementById("class-array-noop-test"), async (el) => {
+		const data = vivy(el, {
+			classes: ["class-a", "class-b", "class-c"]
+		});
+
+		const div = el.querySelector("div");
+		assert(div.getAttribute("class") === "class-a class-b class-c", "Init classes");
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Set identical class values
+		data.classes[0] = "class-a";
+		data.classes[1] = "class-b";
+		data.classes[2] = "class-c";
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Template No-Op -->
+	<div id="template-noop-test" class="test-case">
+		<h3>13. Template No-Op</h3>
+		<t:user-card .info></t:user-card>
+		<vivy:template name="user-card">
+			<div class="card">
+				<span class="name" .name></span>
+				<span class="role" .role></span>
+			</div>
+		</vivy:template>
+	</div>
+	<script>
+	runTest("Template No-Op", document.getElementById("template-noop-test"), async (el) => {
+		const data = vivy(el, {
+			info: { name: "alice", role: "admin" }
+		});
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, characterData: true, subtree: true });
+
+		// Set identical template scope values
+		data.info.name = "alice";
+		data.info.role = "admin";
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Template with Array No-Op -->
+	<div id="template-array-noop-test" class="test-case">
+		<h3>14. Template with Array No-Op</h3>
+		<vivy:template name="list-item">
+			<li><span .text></span></li>
+		</vivy:template>
+		<ul .items[]>
+			<t:list-item></t:list-item>
+		</ul>
+	</div>
+	<script>
+	runTest("Template with Array No-Op", document.getElementById("template-array-noop-test"), async (el) => {
+		const data = vivy(el, {
+			items: [
+				{ text: "first" },
+				{ text: "second" },
+				{ text: "third" }
+			]
+		});
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, characterData: true, subtree: true });
+
+		// Set identical array item values
+		data.items[0].text = "first";
+		data.items[1].text = "second";
+		data.items[2].text = "third";
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Null/Undefined No-Op -->
+	<div id="null-undefined-noop-test" class="test-case">
+		<h3>15. Null/Undefined No-Op</h3>
+		<span .null_val></span>
+		<span .undefined_val></span>
+	</div>
+	<script>
+	runTest("Null/Undefined No-Op", document.getElementById("null-undefined-noop-test"), async (el) => {
+		const data = vivy(el, {
+			null_val: null,
+			undefined_val: undefined
+		});
+
+		const spans = el.querySelectorAll("span");
+		assert(spans[0].textContent === "", "Init null empty");
+		assert(spans[1].textContent === "", "Init undefined empty");
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, characterData: true, subtree: true });
+
+		// Set same nullish values
+		data.null_val = null;
+		data.undefined_val = undefined;
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Boolean Attribute No-Op -->
+	<div id="boolean-attr-noop-test" class="test-case">
+		<h3>16. Boolean Attribute No-Op</h3>
+		<button disabled.=".is_disabled">Button</button>
+		<input required.=".is_required">
+		<div hidden.=".is_hidden">Hidden</div>
+	</div>
+	<script>
+	runTest("Boolean Attribute No-Op", document.getElementById("boolean-attr-noop-test"), async (el) => {
+		const data = vivy(el, {
+			is_disabled: true,
+			is_required: false,
+			is_hidden: true
+		});
+
+		const btn = el.querySelector("button");
+		const input = el.querySelector("input");
+		const div = el.querySelector("div");
+
+		assert(btn.disabled === true, "Init disabled");
+		assert(input.required === false, "Init required");
+		assert(div.hidden === true, "Init hidden");
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Set identical boolean attribute values
+		data.is_disabled = true;
+		data.is_required = false;
+		data.is_hidden = true;
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Multi-Select No-Op -->
+	<div id="multiselect-noop-test" class="test-case">
+		<h3>17. Multi-Select No-Op</h3>
+		<select :assign-to="selected" multiple>
+			<option value="a">A</option>
+			<option value="b">B</option>
+			<option value="c">C</option>
+		</select>
+	</div>
+	<script>
+	runTest("Multi-Select No-Op", document.getElementById("multiselect-noop-test"), async (el) => {
+		const data = vivy(el, { selected: ["a", "c"] });
+
+		const select = el.querySelector("select");
+		assert(select.options[0].selected === true, "Init A selected");
+		assert(select.options[1].selected === false, "Init B not selected");
+		assert(select.options[2].selected === true, "Init C selected");
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Set identical multi-select value
+		data.selected = ["a", "c"];
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Root Update No-Op -->
+	<div id="root-update-noop-test" class="test-case">
+		<h3>18. Root Properties No-Op</h3>
+		<span .name></span>
+		<span .count></span>
+	</div>
+	<script>
+	runTest("Root Properties No-Op", document.getElementById("root-update-noop-test"), async (el) => {
+		const data = vivy(el, { name: "alice", count: 10 });
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, characterData: true, subtree: true });
+
+		// Update root properties with identical values
+		data.name = "alice";
+		data.count = 10;
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Complex Combined No-Op -->
+	<div id="complex-combined-noop-test" class="test-case">
+		<h3>19. Complex Combined No-Op</h3>
+		<div .user title.="`Member: ${_.name}`">
+			<span .name></span>
+			<span .role></span>
+			<ul .tasks[]>
+				<li><span .text></span></li>
+			</ul>
+		</div>
+		<span $.status></span>
+	</div>
+	<script>
+	runTest("Complex Combined No-Op", document.getElementById("complex-combined-noop-test"), async (el) => {
+		const data = vivy(el, {
+			user: {
+				name: "alice",
+				role: "admin",
+				tasks: [
+					{ text: "task 1" },
+					{ text: "task 2" }
+				]
+			},
+			status: "active"
+		});
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Set all identical values
+		data.user.name = "alice";
+		data.user.role = "admin";
+		data.user.tasks[0].text = "task 1";
+		data.user.tasks[1].text = "task 2";
+		data.status = "active";
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Object Reassignment Same Content No-Op -->
+	<div id="object-reassign-noop-test" class="test-case">
+		<h3>20. Object Reassignment Same Content No-Op</h3>
+		<div .data>
+			<span .a></span>
+			<span .b></span>
+		</div>
+	</div>
+	<script>
+	runTest("Object Reassignment Same Content No-Op", document.getElementById("object-reassign-noop-test"), async (el) => {
+		const data = vivy(el, {
+			data: { a: "first", b: "second" }
+		});
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, characterData: true, subtree: true });
+
+		// Reassign with same reference
+		const tmp = data.data;
+		data.data = tmp;
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations for same reference, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Mixed Types No-Op -->
+	<div id="mixed-types-noop-test" class="test-case">
+		<h3>21. Mixed Types No-Op</h3>
+		<span .str_val></span>
+		<span .num_val></span>
+		<span .bool_val></span>
+		<span .zero_val></span>
+		<span .empty_str></span>
+	</div>
+	<script>
+	runTest("Mixed Types No-Op", document.getElementById("mixed-types-noop-test"), async (el) => {
+		const data = vivy(el, {
+			str_val: "text",
+			num_val: 123,
+			bool_val: true,
+			zero_val: 0,
+			empty_str: ""
+		});
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, characterData: true, subtree: true });
+
+		// Set identical values with different types
+		data.str_val = "text";
+		data.num_val = 123;
+		data.bool_val = true;
+		data.zero_val = 0;
+		data.empty_str = "";
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Array Length Property No-Op -->
+	<div id="array-length-noop-test" class="test-case">
+		<h3>22. Array Length Property No-Op</h3>
+		<span .items.length></span>
+	</div>
+	<script>
+	runTest("Array Length Property No-Op", document.getElementById("array-length-noop-test"), async (el) => {
+		const data = vivy(el, { items: [1, 2, 3] });
+
+		const span = el.querySelector("span");
+		assert(span.textContent === "3", "Init length");
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, characterData: true, subtree: true });
+
+		// Modify array but keep same length
+		data.items[0] = 1; // Same value
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Full Object Replacement No-Op -->
+	<div id="full-object-replace-noop-test" class="test-case">
+		<h3>23. Full Object Replacement No-Op</h3>
+		<div .user>
+			<span .name></span>
+			<span .age></span>
+			<span .email></span>
+		</div>
+	</div>
+	<script>
+	runTest("Full Object Replacement No-Op", document.getElementById("full-object-replace-noop-test"), async (el) => {
+		const data = vivy(el, {
+			user: { name: "alice", age: 30, email: "alice@example.com" }
+		});
+
+		// Verify initial state
+		const spans = el.querySelectorAll("span");
+		assert(spans[0].textContent === "alice", "Init name");
+		assert(spans[1].textContent === "30", "Init age");
+		assert(spans[2].textContent === "alice@example.com", "Init email");
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Replace entire object with new object containing identical values
+		data.user = { name: "alice", age: 30, email: "alice@example.com" };
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations for identical object replacement, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Full Array Replacement No-Op -->
+	<div id="full-array-replace-noop-test" class="test-case">
+		<h3>24. Full Array Replacement No-Op</h3>
+		<ul>
+			<li .items[]></li>
+		</ul>
+	</div>
+	<script>
+	runTest("Full Array Replacement No-Op", document.getElementById("full-array-replace-noop-test"), async (el) => {
+		const data = vivy(el, {
+			items: ["apple", "banana", "cherry"]
+		});
+
+		// Verify initial state
+		const lis = el.querySelectorAll("li");
+		assert(lis.length === 3, "Init length");
+		assert(lis[0].textContent === "apple", "Init item 0");
+		assert(lis[1].textContent === "banana", "Init item 1");
+		assert(lis[2].textContent === "cherry", "Init item 2");
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Replace entire array with new array containing identical values
+		data.items = ["apple", "banana", "cherry"];
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations for identical array replacement, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Full Nested Object Replacement No-Op -->
+	<div id="full-nested-object-replace-noop-test" class="test-case">
+		<h3>25. Full Nested Object Replacement No-Op</h3>
+		<div .config>
+			<div .settings>
+				<span .theme></span>
+				<span .language></span>
+			</div>
+		</div>
+	</div>
+	<script>
+	runTest("Full Nested Object Replacement No-Op", document.getElementById("full-nested-object-replace-noop-test"), async (el) => {
+		const data = vivy(el, {
+			config: {
+				settings: {
+					theme: "dark",
+					language: "en"
+				}
+			}
+		});
+
+		// Verify initial state
+		const spans = el.querySelectorAll("span");
+		assert(spans[0].textContent === "dark", "Init theme");
+		assert(spans[1].textContent === "en", "Init language");
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Replace nested object with new object containing identical values
+		data.config.settings = { theme: "dark", language: "en" };
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations for identical nested object replacement, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Full Array of Objects Replacement No-Op -->
+	<div id="full-array-objects-replace-noop-test" class="test-case">
+		<h3>26. Full Array of Objects Replacement No-Op</h3>
+		<ul .users[]>
+			<li>
+				<span .name></span> - <span .role></span>
+			</li>
+		</ul>
+	</div>
+	<script>
+	runTest("Full Array of Objects Replacement No-Op", document.getElementById("full-array-objects-replace-noop-test"), async (el) => {
+		const data = vivy(el, {
+			users: [
+				{ name: "alice", role: "admin" },
+				{ name: "bob", role: "user" },
+				{ name: "charlie", role: "guest" }
+			]
+		});
+
+		// Verify initial state
+		const names = Array.from(el.querySelectorAll("li span:first-child")).map(s => s.textContent);
+		const roles = Array.from(el.querySelectorAll("li span:last-child")).map(s => s.textContent);
+		assert(names.join(",") === "alice,bob,charlie", "Init names");
+		assert(roles.join(",") === "admin,user,guest", "Init roles");
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Replace entire array of objects with identical content
+		data.users = [
+			{ name: "alice", role: "admin" },
+			{ name: "bob", role: "user" },
+			{ name: "charlie", role: "guest" }
+		];
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations for identical array of objects replacement, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Nested Array Replacement No-Op -->
+	<div id="nested-array-replace-noop-test" class="test-case">
+		<h3>27. Nested Array Replacement No-Op</h3>
+		<ul>
+			<li .matrix[][]></li>
+		</ul>
+	</div>
+	<script>
+	runTest("Nested Array Replacement No-Op", document.getElementById("nested-array-replace-noop-test"), async (el) => {
+		const data = vivy(el, {
+			matrix: [
+				[1, 2, 3],
+				[4, 5, 6]
+			]
+		});
+
+		// Verify initial state
+		const lis = el.querySelectorAll("li");
+		assert(lis.length === 6, "Init length");
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+		// Replace entire nested array with identical content
+		data.matrix = [
+			[1, 2, 3],
+			[4, 5, 6]
+		];
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 0, `Expected 0 mutations for identical nested array replacement, got ${mutationCount}`);
+	});
+	</script>
+
+	<!-- Append Array Item -->
+	<div id="append-array-item-test" class="test-case">
+		<h3>28. Append Array Item</h3>
+		<ul>
+			<li .items[]></li>
+		</ul>
+	</div>
+	<script>
+	runTest("Append Array Item", document.getElementById("append-array-item-test"), async (el) => {
+		const data = vivy(el, {
+			items: ["apple", "banana", "cherry"]
+		});
+
+		let mutationCount = 0;
+		const observer = new MutationObserver((mutations) => {
+			mutationCount += mutations.length;
+		});
+		observer.observe(el, { childList: true, attributes: true, subtree: true, characterData: true });
+
+		data.items.push("durian");
+
+		await wait(1);
+		observer.disconnect();
+
+		assert(mutationCount === 2, `Expected 2 mutations adding a new item got ${mutationCount}`);
+	});
+	</script>
+
+  <!-- TODO implement array update optimizations... -->
+
+</body>
+</html>

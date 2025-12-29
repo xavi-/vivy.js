@@ -126,7 +126,7 @@ const vivy = (() => {
 				} else if (isPrimitive) {
 					const childCount = element.children.length;
 					if (childCount === 0) {
-						element.textContent = `${data}`;
+						if (element.textContent !== `${data}`) element.textContent = `${data}`;
 					} else if (tree.children.size > 0) {
 						// Edge case: object val replaced with primitive
 						console.warn(
